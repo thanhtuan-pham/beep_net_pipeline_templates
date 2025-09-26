@@ -33,7 +33,7 @@ jobs:
               
     - name: Publish Test Results
       run: |
-          if [ ("${{ inputs.runner }}" == "windows-latest") ]; then
+          if: [ ("${{ inputs.runner }}" == "windows-latest") ]; then
              uses: EnricoMi/publish-unit-test-result-action/windows@v2
              if: (!cancelled())
              with:
