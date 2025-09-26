@@ -14,7 +14,7 @@ on:
         type: string
           
 jobs:  
-  build:
+  Build:
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v4
@@ -26,14 +26,13 @@ jobs:
       run: dotnet restore
     - name: Build
       run: dotnet build --no-restore
-      
-  test:
-    runs-on: windows-latest
-    needs: build 
-    steps:
     - name: Test
       run: dotnet test --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx"
-              
+      
+  Test-Results:
+    runs-on: windows-latest
+    needs: Build 
+    steps:              
     - name: Publish Test Results
       uses: EnricoMi/publish-unit-test-result-action/windows@v2
       if:  (!cancelled())
