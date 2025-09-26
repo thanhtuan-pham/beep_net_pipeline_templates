@@ -35,12 +35,14 @@ jobs:
       run: |
           if: [ ("${{ inputs.runner }}" == "windows-latest") ]; then
              uses: EnricoMi/publish-unit-test-result-action/windows@v2
-             if: (!cancelled())
+             if: [ (!cancelled()) ]; then
              with:
               files: ${{ inputs.results-path }}
+             fi
           else
             uses: EnricoMi/publish-unit-test-result-action/macos@v2
-             if: (!cancelled())
+             if: [ (!cancelled()) ]; then
              with:
               files: ${{ inputs.results-path }}
+             fi
           fi
