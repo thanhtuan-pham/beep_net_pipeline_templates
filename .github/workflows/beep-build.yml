@@ -12,9 +12,6 @@ on:
       results-path:
         required: true
         type: string
-      results-users:
-        required: true
-        type: string
           
 jobs:            
   build:
@@ -33,9 +30,17 @@ jobs:
       run: dotnet build --no-restore
     - name: Test
       run: dotnet test --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx"
-      
+              
     - name: Publish Test Results
-      uses: ${{ inputs.results-users }}
-      if: (!cancelled())
-      with:
-        files: ${{ inputs.results-path }}
+      run: |
+          if ${{ inputs.runner == 'windows-latest' }}; then
+             uses: EnricoMi/publish-unit-test-result-action/windows@v2
+             if: (!cancelled())
+             with:
+              files: ${{ inputs.results-path }}
+          else
+            uses: EnricoMi/publish-unit-test-result-action/macos@v2
+             if: (!cancelled())
+             with:
+              files: ${{ inputs.results-path }}
+          fi
