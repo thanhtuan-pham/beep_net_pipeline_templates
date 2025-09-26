@@ -35,7 +35,7 @@ jobs:
       run: dotnet test --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx"
       
     - name: Publish Test Results
-      uses: EnricoMi/publish-unit-test-result-action/${{ inputs.results-users }}
+      uses: ${{ inputs.results-users }}
       if: (!cancelled())
       with:
         files: ${{ inputs.results-path }}
