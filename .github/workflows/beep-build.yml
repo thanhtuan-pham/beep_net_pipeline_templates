@@ -12,21 +12,11 @@ on:
       results-path:
         required: true
         type: string
+      results-users:
+        required: true
+        type: string
           
-jobs:
-  set-environment:
-    runs-on: ${{ inputs.runner }}
-    outputs:
-      ENVIRONMENT_NAME: ${{ steps.set-env-step.outputs.ENVIRONMENT_NAME }}
-    steps:
-      - id: set-env-step
-        run: |
-          # or whatever logic you want to determine environment
-          if [[ runner.os == 'Linux' ]]; then
-            echo "ENVIRONMENT_NAME=production" >> $GITHUB_OUTPUT
-          else
-            echo "ENVIRONMENT_NAME=test" >> $GITHUB_OUTPUT
-            
+jobs:            
   build:
 
     runs-on: windows-latest
@@ -45,19 +35,7 @@ jobs:
       run: dotnet test --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx"
       
     - name: Publish Test Results
-      uses: EnricoMi/publish-unit-test-result-action/macos@v2
-      if: runner.os == 'Linux'
-      with:
-        files: ${{ inputs.results-path }}
-        
-    - name: Publish Test Results
-      uses: EnricoMi/publish-unit-test-result-action/bash@v2
-      if: runner.os == 'macOS'
-      with:
-        files: ${{ inputs.results-path }}
-        
-    - name: Publish Test Results
-      uses: EnricoMi/publish-unit-test-result-action/windows@v2
-      if: runner.os == 'Windows'
+      uses: EnricoMi/publish-unit-test-result-action/${{ inputs.results-users }}
+      if: (!cancelled())
       with:
         files: ${{ inputs.results-path }}
