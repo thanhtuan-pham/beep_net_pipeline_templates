@@ -14,7 +14,8 @@ on:
         type: string
           
 jobs:  
-  Build:
+  Build-Linux:
+    if: inputs.runner == 'ubuntu-latest'
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
@@ -29,7 +30,49 @@ jobs:
     - name: Test
       run: dotnet test --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx"
     - name: Publish Test Results
-      if: runner.os == 'Windows'
-      uses: EnricoMi/publish-unit-test-result-action/windows@v2
+      uses: EnricoMi/publish-unit-test-result-action/linux@v2
+      if: (!cancelled())
       with:
-        files: ${{ inputs.results-path }}       
+        files: ${{ inputs.results-path }} 
+        
+  Build-macOS:
+    if: inputs.runner == 'macos-latest'
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+    - name: Restore dependencies
+      run: dotnet restore
+    - name: Build
+      run: dotnet build --no-restore
+    - name: Test
+      run: dotnet test --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx"
+    - name: Publish Test Results
+      uses: EnricoMi/publish-unit-test-result-action/macos@v2
+      if: (!cancelled())
+      with:
+        files: ${{ inputs.results-path }}
+        
+  Build-Windows:
+    if: inputs.runner == 'windows-latest'
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+    - name: Restore dependencies
+      run: dotnet restore
+    - name: Build
+      run: dotnet build --no-restore
+    - name: Test
+      run: dotnet test --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx"
+    - name: Publish Test Results
+      uses: EnricoMi/publish-unit-test-result-action/windows@v2
+      if: (!cancelled())
+      with:
+        files: ${{ inputs.results-path }}
