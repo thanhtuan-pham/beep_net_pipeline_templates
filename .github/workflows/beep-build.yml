@@ -37,7 +37,7 @@ jobs:
         
   Build-macOS:
     if: inputs.runner == 'macos-latest'
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     steps:
     - uses: actions/checkout@v4
     - name: Setup .NET
@@ -58,7 +58,7 @@ jobs:
         
   Build-Windows:
     if: inputs.runner == 'windows-latest'
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     steps:
     - uses: actions/checkout@v4
     - name: Setup .NET
