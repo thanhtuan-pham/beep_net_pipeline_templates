@@ -14,50 +14,7 @@ on:
         type: string
           
 jobs:  
-  Build-Linux:
-    if: inputs.runner == 'ubuntu-latest'
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: 8.0.x
-    - name: Restore dependencies
-      run: dotnet restore
-    - name: Build
-      run: dotnet build --no-restore
-    - name: Test
-      run: dotnet test --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx"
-    - name: Publish Test Results
-      uses: EnricoMi/publish-unit-test-result-action/linux@v2
-      if: (!cancelled())
-      with:
-        files: ${{ inputs.results-path }} 
-        
-  Build-macOS:
-    if: inputs.runner == 'macos-latest'
-    runs-on: macos-latest
-    steps:
-    - uses: actions/checkout@v4
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: 8.0.x
-    - name: Restore dependencies
-      run: dotnet restore
-    - name: Build
-      run: dotnet build --no-restore
-    - name: Test
-      run: dotnet test --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx"
-    - name: Publish Test Results
-      uses: EnricoMi/publish-unit-test-result-action/macos@v2
-      if: (!cancelled())
-      with:
-        files: ${{ inputs.results-path }}
-        
-  Build-Windows:
-    if: inputs.runner == 'windows-latest'
+  build-and-test-project:
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v4
@@ -80,3 +37,25 @@ jobs:
       run: dotnet pack --configuration Release --no-build --output nupkgs/
     - name: Publish NuGet package
       run: dotnet nuget push "nupkgs/*.nupkg" --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json
+      
+  release-project:
+    name: Release project
+    runs-on: windows-latest
+    needs: build-and-test-project
+    steps:
+    - name: Download artifact
+      uses: actions/download-artifact@v5
+      with:
+       name: static-stite
+    - name: Archive site content
+      uses: thedoctor0/zip-release@master
+      with:
+       filename: site.zip
+    - name: Create Githup release
+      id: create-new-release
+      uses: action/create-release@v1
+      env:
+       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+       tag_name: ${{ github.run_number }}
+       release_name: Release ${{ github.run_number }}
