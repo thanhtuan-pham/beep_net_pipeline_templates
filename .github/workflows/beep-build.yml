@@ -76,3 +76,7 @@ jobs:
       if: (!cancelled())
       with:
         files: ${{ inputs.results-path }}
+    - name: Pack NuGet package
+      run: dotnet pack --configuration Release --no-build --output nupkgs/
+    - name: Publish NuGet package
+      run: dotnet nuget push "nupkgs/*.nupkg" --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json
