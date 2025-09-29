@@ -15,7 +15,7 @@ on:
           
 jobs:  
   Build:
-    runs-on: windows-latest
+    runs-on: inputs.runner
     steps:
     - uses: actions/checkout@v4
     - name: Setup .NET
