@@ -29,6 +29,7 @@ jobs:
     - name: Test
       run: dotnet test --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx"
     - name: Publish Test Results
+      if: runner.os == 'Windows'
       uses: EnricoMi/publish-unit-test-result-action/windows@v2
       with:
         files: ${{ inputs.results-path }}       
