@@ -1,14 +1,8 @@
-# This workflow will build a .NET project
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
-
-name: .NET
+name: Build And Test Project
 
 on:
  workflow_call:
     inputs:
-      runner:
-        required: true
-        type: string
       results-path:
         required: true
         type: string
@@ -33,29 +27,3 @@ jobs:
       if: (!cancelled())
       with:
         files: ${{ inputs.results-path }}
-    - name: Pack NuGet package
-      run: dotnet pack --configuration Release --no-build --output nupkgs/
-    - name: Publish NuGet package
-      run: dotnet nuget push "nupkgs/*.nupkg" --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json
-      
-  release-project:
-    name: Release project
-    runs-on: windows-latest
-    needs: build-and-test-project
-    steps:
-    - name: Download artifact
-      uses: actions/download-artifact@v5
-      with:
-       name: static-stite
-    - name: Archive site content
-      uses: thedoctor0/zip-release@master
-      with:
-       filename: site.zip
-    - name: Create Githup release
-      id: create-new-release
-      uses: action/create-release@v1
-      env:
-       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-       tag_name: ${{ github.run_number }}
-       release_name: Release ${{ github.run_number }}
