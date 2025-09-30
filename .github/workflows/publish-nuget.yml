@@ -31,6 +31,6 @@ jobs:
     - name: Build
       run: dotnet build --configuration Release --no-restore
     - name: Pack NuGet package
-      run: dotnet pack --configuration Release --no-build --output nupkgs/ /p:Version=${{ steps.tag.outputs.tag }}
+      run: dotnet pack --configuration Release --no-build --output nupkgs/
     - name: Publish NuGet package
       run: dotnet nuget push "**/*.nupkg" --api-key ${{ secrets.NUGET_KEY }} --source https://api.nuget.org/v3/index.json
