@@ -2,7 +2,9 @@ name: Publish NuGet Package
 
 on:
   workflow_call:
-  
+    secrets:
+      NUGET_KEY:
+        required: true
 jobs:
   build:
     name: Publish NuGet Package
@@ -31,4 +33,4 @@ jobs:
     - name: Pack NuGet package
       run: dotnet pack --configuration Release --no-build --output nupkgs/ /p:Version=${{ steps.tag.outputs.tag }}
     - name: Publish NuGet package
-      run: dotnet nuget push "**/*.nupkg" --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json
+      run: dotnet nuget push "**/*.nupkg" --api-key ${{ secrets.NUGET_KEY }} --source https://api.nuget.org/v3/index.json
