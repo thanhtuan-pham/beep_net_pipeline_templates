@@ -2,10 +2,6 @@ name: Create Release
 
 on:
  workflow_call:
-    inputs:
-      runner:
-        required: true
-        type: string
   
 jobs:
   build:
