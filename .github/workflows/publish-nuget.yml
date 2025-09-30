@@ -14,11 +14,20 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 8.0.x
+
+    - name: Extract version from tag
+      id: get_version
+      run: |
+        TAG=${{ github.ref_name }}
+        VERSION=${TAG#v}
+        echo "PACKAGE_VERSION=$VERSION" >> $GITHUB_ENV
+      # Remove 'v' prefix from a tag like 'v1.2.3' to get '1.2.3'
+      
     - name: Restore dependencies
       run: dotnet restore
     - name: Build
       run: dotnet build --configuration Release --no-restore
     - name: Pack NuGet package
-      run: dotnet pack --configuration Release --no-build --output nupkgs/ /p:Version=${{ github.event.release.tag_name }}
+      run: dotnet pack --configuration Release --no-build --output nupkgs/ /p:Version=${{ env.PACKAGE_VERSION }}
     - name: Publish NuGet package
       run: dotnet nuget push "**/*.nupkg" --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json
