@@ -15,7 +15,7 @@ jobs:
   build-and-test-project:
     strategy:
       matrix:
-        project-path: ${{ fromJSON(github.event.inputs.project-path) }}
+        project-path: ${{ fromJSON(inputs.project-path) }}
         
     runs-on: windows-latest
     steps:
