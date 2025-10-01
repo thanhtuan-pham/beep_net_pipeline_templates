@@ -13,9 +13,9 @@ on:
           
 jobs:  
   build-and-test-project:
-    strategy:
-      matrix:
-        project-path: ${{ fromJSON(inputs.project-path) }}
+    #strategy:
+      #matrix:
+        #project-path: ${{ fromJSON(inputs.project-path) }}
         
     runs-on: windows-latest
     steps:
@@ -29,8 +29,8 @@ jobs:
     - name: Build
       run: dotnet build --no-restore
     - name: Test
-      #run: dotnet test --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx"
-      run: dotnet test ${{ matrix.project-path }} --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx"
+      run: dotnet test --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx"
+      #run: dotnet test ${{ matrix.project-path }} --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx"
     - name: Publish Test Results
       uses: EnricoMi/publish-unit-test-result-action/windows@v2
       if: (!cancelled())
