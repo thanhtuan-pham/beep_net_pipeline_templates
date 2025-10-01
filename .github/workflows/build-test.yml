@@ -4,8 +4,9 @@ on:
   workflow_call:
     inputs:
       project-path:
+        required: false
         type: string
-        description: "--no-build --verbosity normal"
+        description: '["--no-build --verbosity normal"]'
       results-path:
         required: true
         type: string
