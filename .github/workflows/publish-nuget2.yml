@@ -1,0 +1,34 @@
+name: Publish NuGet Package2
+
+on:
+  workflow_call:
+
+jobs:
+  build:
+    name: Publish NuGet Package
+    runs-on: windows-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+          fetch-depth: 0 
+          
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+
+    - name: Get tag
+      id: tag
+      uses: dawidd6/action-get-tag@v1
+      with:
+        strip_v: true
+              
+    - name: Restore dependencies
+      run: dotnet restore
+    - name: Build
+      run: dotnet build --configuration Release --no-restore
+    - name: Pack NuGet package
+      run: dotnet pack --configuration Release --no-build --output nupkgs/ /p:Version=${{ steps.tag.outputs.tag }}
+    - name: Publish NuGet package
+      run: dotnet nuget push "**/*.nupkg" --api-key ${{ secrets.NUGET_API_KEY  }} --source https://api.nuget.org/v3/index.json
