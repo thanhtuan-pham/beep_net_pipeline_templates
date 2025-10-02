@@ -12,5 +12,5 @@
 
         - name: Build and Run Docker Container for Tests
           run: |
-            docker build -t my-tests
+            docker build -t my-tests -f src/Beep.Database.Mapper.Tests.Integration .
             docker run --name dotnet-tests my-tests
