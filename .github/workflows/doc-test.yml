@@ -8,8 +8,8 @@ on:
         type: string
 jobs:
   run-tests:
-    runs-on: window-lasted # GitHub-hosted runners provide a Docker environment by default
-
+    runs-on: windows-latest
+    
     steps:
       - uses: actions/checkout@v4 # Checkout your repository code
       - name: Setup .NET
