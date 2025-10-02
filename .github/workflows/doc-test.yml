@@ -1,0 +1,16 @@
+    name: .NET Docker Tests
+
+    on:
+      workflow_call:
+      
+    jobs:
+      build-and-test:
+        runs-on: windows-latest
+
+        steps:
+        - uses: actions/checkout@v4
+
+        - name: Build and Run Docker Container for Tests
+          run: |
+            docker build -t my-tests
+            docker run --name dotnet-tests my-tests
