@@ -14,8 +14,8 @@ jobs:
         with:
           dotnet-version: '8.0.x' # Specify your .NET version
       - name: Restore dependencies
-        run: dotnet restore ./Beep.Database.Mapper.Tests.Integration.csproj
+        run: dotnet restore
       - name: Build
-        run: dotnet build ./Beep.Database.Mapper.Tests.Integration.csproj --no-restore
+        run: dotnet build --no-restore
       - name: Run Tests
         run: dotnet test ./Beep.Database.Mapper.Tests.Integration.csproj --no-build
