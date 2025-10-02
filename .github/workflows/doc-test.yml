@@ -18,4 +18,4 @@ jobs:
       - name: Build
         run: dotnet build --no-restore
       - name: Run Tests
-        run: dotnet test ./Beep.Database.Mapper.Tests.Integration.csproj --no-build
+        run: dotnet test ./src/Beep.Database.Mapper.Tests.Integration.csproj --no-build --verbosity normal
