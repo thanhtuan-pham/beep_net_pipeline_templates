@@ -8,7 +8,7 @@ on:
         type: string
 jobs:
   run-tests:
-    runs-on: windows-latest # GitHub-hosted runners provide a Docker environment by default
+    runs-on: ubuntu-latest # GitHub-hosted runners provide a Docker environment by default
 
     steps:
       - uses: actions/checkout@v4 # Checkout your repository code
@@ -23,7 +23,7 @@ jobs:
       - name: Run Tests
         run: dotnet test ./src/Beep.Database.Mapper.Tests.Integration/Beep.Database.Mapper.Tests.Integration.csproj --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx"
       - name: Publish Test Results
-        uses: EnricoMi/publish-unit-test-result-action/windows@v2
+        uses: EnricoMi/publish-unit-test-result-action@v2
         if: (!cancelled())
         with:
           files: ${{ inputs.results-path }}
