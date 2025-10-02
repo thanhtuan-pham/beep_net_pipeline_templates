@@ -21,7 +21,7 @@ jobs:
       - name: Build
         run: dotnet build --no-restore
       - name: Run Tests
-        run: dotnet test ./src/Beep.Database.Mapper.Tests.Integration/Beep.Database.Mapper.Tests.Integration.csproj --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx"
+        run: dotnet test --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx"
       - name: Publish Test Results
         uses: EnricoMi/publish-unit-test-result-action@v2
         if: (!cancelled())
