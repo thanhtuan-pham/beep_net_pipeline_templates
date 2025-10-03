@@ -7,7 +7,7 @@ on:
         required: true
         type: string
 jobs:
-  run-tests:
+  ci-build-test:
     runs-on: ubuntu-latest
     
     steps:
@@ -27,3 +27,38 @@ jobs:
         if: (!cancelled())
         with:
           files: ${{ inputs.results-path }}
+          
+  # === Deployment to Staging ===
+  deploy-staging:
+    name: Deploy to Staging
+    needs: ci-build-test # Depends on the CI job
+    if: github.ref == 'refs/heads/master' # Only runs for pushes to the main branch
+    runs-on: ubuntu-latest
+    environment: QA # Associates this job with the 'staging' environment
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Deploy to Staging Environment
+        run: |
+          echo "Deploying to staging environment..."
+          echo "Deployment complete."
+
+  # === Deployment to Production ===
+  deploy-prod:
+    name: Deploy to Production
+    needs: deploy-staging # Depends on staging deployment completing
+    if: github.ref == 'refs/heads/master' # Only runs for pushes to the main branch
+    runs-on: ubuntu-latest
+    environment: 
+      name: PROD # Associates this job with the 'production' environment
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Deploy to Production Environment
+        run: |
+          echo "Deploying to production environment..."
+          echo "Deployment complete."
