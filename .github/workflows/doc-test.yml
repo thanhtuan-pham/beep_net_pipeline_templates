@@ -42,8 +42,7 @@ jobs:
       
       - name: Deploy to Staging Environment
         run: |
-          echo "Deploying to staging environment..."
-          For example: ${{ secrets.STAGING_DEPLOY_KEY }}
+          echo "Deploying to staging environment... ${{ secrets.STAGING_DEPLOY_KEY }}"
           echo "Deployment complete."
 
   # === Deployment to Production ===
@@ -61,6 +60,5 @@ jobs:
       
       - name: Deploy to Production Environment
         run: |
-          echo "Deploying to production environment..."
-          For example: ${{ secrets.PROD_DEPLOY_KEY }}
+          echo "Deploying to production environment... ${{ secrets.PROD_DEPLOY_KEY }}"
           echo "Deployment complete."
