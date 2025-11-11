@@ -16,8 +16,8 @@ on:
       #  required: true   
 
     outputs:
-      is_create_Tag:
-        value: ${{ jobs.deploy-prod.outputs.is_create_Tag }}
+      new_version:
+        value: ${{ jobs.deploy-prod.outputs.new_version }}
 jobs:  
   # === CI and Unit Tests ===
   ci-build-test:   
@@ -62,7 +62,7 @@ jobs:
     environment: 
       name: PROD 
     outputs:
-         is_create_Tag: ${{ steps.create_tag.outputs.is_create }}
+         new_version: ${{ steps.calculate_new_version.outputs.new_version }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -75,29 +75,23 @@ jobs:
           releases-only: false
           prefix: "v"
               
-      - name: Calculate new tag name
-        id: calculate_new_tag
-        run: |
-              LAST_TAG=${{ steps.latest_tag.outputs.tag }}
-              VERSION_CORE=$(echo $LAST_TAG | sed 's/^v//')
-              NEW_VERSION_CORE=$(echo $VERSION_CORE | awk -F'.' -v OFS='.' '{$NF = $NF + 1;}1')
-              NEW_TAG="v$NEW_VERSION_CORE"
-              echo "new_tag=$NEW_TAG" >> $GITHUB_OUTPUT
+     # - name: Calculate new tag name
+      #  id: calculate_new_tag
+       # run: |
+        #      LAST_TAG=${{ steps.latest_tag.outputs.tag }}
+        #      VERSION_CORE=$(echo $LAST_TAG | sed 's/^v//')
+         #     NEW_VERSION_CORE=$(echo $VERSION_CORE | awk -F'.' -v OFS='.' '{$NF = $NF + 1;}1')
+          #    NEW_TAG="v$NEW_VERSION_CORE"
+           #   echo "new_tag=$NEW_TAG" >> $GITHUB_OUTPUT
 
       - name: Calculate new tag name
         id: calculate_new_version
         run: |
-              NEW_TAG=${{ steps.calculate_new_tag.outputs.new_tag }}
-              NEW_VERSION=$(echo $NEW_TAG | sed 's/^v//')
-              echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
-              
-      - name: Create and push new tag
-        id: create_tag
-        run: |
-          git tag ${{ steps.calculate_new_tag.outputs.new_tag }}
-          git push origin master ${{ steps.calculate_new_tag.outputs.new_tag }}
-          echo "is_create=true" >> $GITHUB_OUTPUT
- 
+              LAST_TAG=${{ steps.latest_tag.outputs.tag }}
+              VERSION_CORE=$(echo $LAST_TAG | sed 's/^v//')
+              NEW_VERSION_CORE=$(echo $VERSION_CORE | awk -F'.' -v OFS='.' '{$NF = $NF + 1;}1')
+              echo "new_version=$NEW_VERSION_CORE" >> $GITHUB_OUTPUT
+               
    #   - name: Create Pre-Release
     #    id: create_release
      #   uses: actions/create-release@v1
