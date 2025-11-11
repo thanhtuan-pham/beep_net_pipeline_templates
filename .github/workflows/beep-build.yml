@@ -85,6 +85,7 @@ jobs:
                 echo "new_version=$NEW_VERSION_CORE" >> $GITHUB_OUTPUT
               else
                 NEW_VERSION_CORE= "$VERSION_CORE.build.1"
+                echo $NEW_VERSION_CORE
                 echo "new_version=$NEW_VERSION_CORE" >> $GITHUB_OUTPUT
               fi
                             
