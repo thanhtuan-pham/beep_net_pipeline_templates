@@ -62,7 +62,7 @@ jobs:
     environment: 
       name: PROD 
     outputs:
-         new_version: ${{ steps.calculate_new_tag.outputs.new_tag }}
+         new_tag: ${{ steps.calculate_new_tag.outputs.new_tag }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
