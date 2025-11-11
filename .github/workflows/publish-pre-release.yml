@@ -3,7 +3,7 @@ name: Publish Pre Release
 on:
   workflow_call:
     inputs:
-      new_tag:
+      new_version:
         required: true
         type: string
       solution-path:
@@ -29,22 +29,14 @@ jobs:
       with:
         dotnet-version: 8.0.x
 
-    - name: Calculate new tag name
-      id: calculate_new_tag
-      run: |
-             echo "new_tag=v${{ inputs.new_tag }}" >> $GITHUB_OUTPUT
-           
-    - name: Calculate new version name
-      run: echo "${{ steps.calculate_new_tag.outputs.new_tag }}"
-           
     - name: Create Pre-Release
       id: create_release
       uses: actions/create-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: ${{ inputs.new_tag  }}
-        release_name: Pre-Release ${{ inputs.new_tag }}
+        tag_name: "v${{ inputs.new_version  }}"
+        release_name: "Pre-Release v${{ inputs.new_version }}"
         draft: false
         prerelease: true
           
@@ -53,7 +45,7 @@ jobs:
     - name: Build
       run: dotnet build --configuration Release --no-restore
     - name: Pack NuGet package
-      run: dotnet pack ${{ inputs.solution-path }} --configuration Release --no-build --output nupkgs/ /p:Version=${{ steps.calculate_new_version.outputs.new_version }}
+      run: dotnet pack ${{ inputs.solution-path }} --configuration Release --no-build --output nupkgs/ /p:Version=${{ inputs.new_version }}
     - name: Publish NuGet package
       run: dotnet nuget push "**/*.nupkg" --api-key ${{ secrets.NUGET_KEY  }} --source https://api.nuget.org/v3/index.json
             
