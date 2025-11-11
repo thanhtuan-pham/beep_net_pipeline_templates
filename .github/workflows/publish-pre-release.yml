@@ -32,9 +32,9 @@ jobs:
     - name: Calculate new version name
       id: calculate_new_version
       run: |             
-              NEW_TAG_CORE= ${{ inputs.new_tag  }}
-              VERSION_CORE=$(echo $NEW_TAG | sed 's/^v//')
-              echo "new_version=$VERSION_CORE" >> $GITHUB_OUTPUT
+              NAME_TAG = ${{ inputs.new_tag  }}
+              VERSION_CORE = $(echo $NEW_TAG | sed 's/^v//')
+              echo "new_version = $VERSION_CORE" >> $GITHUB_OUTPUT
            
     - name: Create Pre-Release
       id: create_release
