@@ -84,7 +84,7 @@ jobs:
                 NEW_VERSION_CORE=$(echo $VERSION_CORE | awk -F'.' -v OFS='.' '{$NF = $NF + 1;}1')
                 echo "new_version=$NEW_VERSION_CORE" >> $GITHUB_OUTPUT
               else
-                NEW_VERSION_CORE= "${VERSION_CORE}.build.1"
+                NEW_VERSION_CORE= "0.0.0.build.1"
                 echo "new_version=$NEW_VERSION_CORE" >> $GITHUB_OUTPUT
               fi
               
