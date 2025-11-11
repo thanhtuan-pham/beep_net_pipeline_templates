@@ -80,7 +80,7 @@ jobs:
         run: |
               LAST_TAG=${{ steps.latest_tag.outputs.tag }}
               VERSION_CORE=$(echo $LAST_TAG | sed 's/^v//')
-              echo "new_version=$NEW_VERSION_CORE.build.1" >> $GITHUB_OUTPUT
+              echo "new_version= ${{ format('{0}.build.1', $NEW_VERSION_CORE) }}" >> $GITHUB_OUTPUT
               
               #if [[ contains(steps.latest_tag.outputs.tag, 'build') ]]; then
                # NEW_VERSION_CORE=$(echo $VERSION_CORE | awk -F'.' -v OFS='.' '{$NF = $NF + 1;}1')
