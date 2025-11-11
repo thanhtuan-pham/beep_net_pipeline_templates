@@ -35,12 +35,8 @@ jobs:
              echo "new_tag=$(echo ${{ inputs.new_tag }} | sed 's/^v//')" >> $GITHUB_OUTPUT
            
     - name: Calculate new version name
-      id: calculate_new_version
       run: |             
-              LAST_TAG = ${{ steps.calculate_new_tag.outputs.new_tag }}
-              echo "new_version = $LAST_TAG" >> $GITHUB_OUTPUT
-             # VERSION_CORE = $(echo $LAST_TAG | sed 's/^v//')
-              # echo "new_version = $VERSION_CORE" >> $GITHUB_OUTPUT
+              echo ${{ steps.calculate_new_tag.outputs.new_tag }}
            
     - name: Create Pre-Release
       id: create_release
