@@ -72,11 +72,9 @@ jobs:
         
     - name: Find latest tag
       id: latest_tag
-      uses: oprypin/find-latest-tag@v1
+      uses: actions-ecosystem/action-get-latest-tag@v1
       with:
-        repository: ${{ github.repository }}
-        releases-only: false
-        prefix: "v"
+        semver_only: true
 
     - name: Check tag pre release
       id: check_tag_pre_release
