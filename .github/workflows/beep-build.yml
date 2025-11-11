@@ -13,7 +13,11 @@ on:
         
    # secrets:
      # NUGET_KEY:
-      #  required: true       
+      #  required: true   
+
+    outputs:
+      my_output_key:
+        value: ${{ jobs.deploy-prod.outputs.is_create_Tag }}
 jobs:  
   # === CI and Unit Tests ===
   ci-build-test:   
@@ -56,7 +60,9 @@ jobs:
     if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     environment: 
-      name: PROD    
+      name: PROD 
+    outputs:
+         is_create_Tag: ${{ steps.create_tag.outputs.is_create }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -86,10 +92,12 @@ jobs:
               echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
               
       - name: Create and push new tag
+        id: create_tag
         run: |
           git tag ${{ steps.calculate_new_tag.outputs.new_tag }}
           git push origin master ${{ steps.calculate_new_tag.outputs.new_tag }}
-          
+          echo "is_create=true" >> $GITHUB_OUTPUT
+ 
    #   - name: Create Pre-Release
     #    id: create_release
      #   uses: actions/create-release@v1
