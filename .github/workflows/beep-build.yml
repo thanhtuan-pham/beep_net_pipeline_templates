@@ -80,9 +80,14 @@ jobs:
         run: |
               LAST_TAG=${{ steps.latest_tag.outputs.tag }}
               VERSION_CORE=$(echo $LAST_TAG | sed 's/^v//')
-              NEW_VERSION_CORE=$(echo $VERSION_CORE | awk -F'.' -v OFS='.' '{$NF = $NF + 1;}1')
-              echo "new_version=$NEW_VERSION_CORE" >> $GITHUB_OUTPUT
-
+              if [[ "contains(VERSION_CORE, 'build')" ]]; then               
+                NEW_VERSION_CORE=$(echo $VERSION_CORE | awk -F'.' -v OFS='.' '{$NF = $NF + 1;}1')
+                echo "new_version=$NEW_VERSION_CORE" >> $GITHUB_OUTPUT
+              else
+                NEW_VERSION_CORE= "$VERSION_CORE.build.1"
+                echo "new_version=$NEW_VERSION_CORE" >> $GITHUB_OUTPUT
+              fi
+                            
       #- name: Calculate new tag name
        # id: calculate_new_version
        # run: |
