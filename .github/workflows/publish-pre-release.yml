@@ -1,0 +1,51 @@
+name: Publish Pre Release
+
+on:
+  workflow_call:
+    inputs:
+      new_version:
+        required: true
+        type: string
+      solution-path:
+        required: false
+        type: string
+        default: ''
+        
+    secrets:
+      NUGET_KEY:
+        required: true
+jobs:
+  build:
+    name: Publish NuGet Package
+    runs-on: windows-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+          fetch-depth: 0 
+          
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+
+    - name: Create Pre-Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ v$inputs.new_version  }}
+        release_name: Pre-Release ${{ v$inputs.new_version }}
+        draft: false
+        prerelease: true
+          
+    - name: Restore dependencies
+      run: dotnet restore
+    - name: Build
+      run: dotnet build --configuration Release --no-restore
+    - name: Pack NuGet package
+      run: dotnet pack ${{ inputs.solution-path }} --configuration Release --no-build --output nupkgs/ /p:Version=${{ inputs.new_versionn }}
+    - name: Publish NuGet package
+      run: dotnet nuget push "**/*.nupkg" --api-key ${{ secrets.NUGET_KEY  }} --source https://api.nuget.org/v3/index.json
+            
