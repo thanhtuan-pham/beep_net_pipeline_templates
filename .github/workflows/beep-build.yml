@@ -68,7 +68,7 @@ jobs:
           repository: ${{ github.repository }}
           releases-only: false
           prefix: "v"
-          
+              
       - name: Calculate new tag name
         id: calculate_new_tag
         run: |
@@ -78,6 +78,13 @@ jobs:
               NEW_TAG="v$NEW_VERSION_CORE"
               echo "new_tag=$NEW_TAG" >> $GITHUB_OUTPUT
 
+      - name: Calculate new tag name
+        id: calculate_new_version
+        run: |
+              NEW_TAG=${{ steps.calculate_new_tag.outputs.new_tag }}
+              NEW_VERSION=$(echo $NEW_TAG | sed 's/^v//')
+              echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+              
       - name: Create Pre-Release
         id: create_release
         uses: actions/create-release@v1
@@ -94,6 +101,6 @@ jobs:
       - name: Build
         run: dotnet build --configuration Release --no-restore
       - name: Pack NuGet package
-        run: dotnet pack ${{ inputs.solution-path }} --configuration Release --no-build --output nupkgs/ /p:Version=${{ steps.calculate_new_tag.outputs.new_tag }}
+        run: dotnet pack ${{ inputs.solution-path }} --configuration Release --no-build --output nupkgs/ /p:Version=${{ steps.calculate_new_version.outputs.new_version }}
       - name: Publish NuGet package
         run: dotnet nuget push "**/*.nupkg" --api-key ${{ secrets.NUGET_KEY  }} --source https://api.nuget.org/v3/index.json
