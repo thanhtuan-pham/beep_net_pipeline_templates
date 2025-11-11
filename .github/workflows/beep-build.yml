@@ -6,18 +6,11 @@ on:
       results-path:
         required: true
         type: string
-      #solution-path:
-       # required: false
-       # type: string
-       # default: ''
         
-   # secrets:
-     # NUGET_KEY:
-      #  required: true   
-
-    outputs:
-      new_version:
-        value: ${{ jobs.deploy-prod.outputs.new_version }}
+    secrets:
+      NUGET_KEY:
+        required: true   
+        
 jobs:  
   # === CI and Unit Tests ===
   ci-build-test:   
@@ -61,65 +54,60 @@ jobs:
     runs-on: ubuntu-latest
     environment: 
       name: PROD 
-    outputs:
-         new_version: ${{ steps.calculate_new_version.outputs.new_version }}
+      
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        
-      - name: Find latest tag
-        id: latest_tag
-        uses: oprypin/find-latest-tag@v1
-        with:
-          repository: ${{ github.repository }}
-          releases-only: false
-          prefix: "v"
-
-      - name: Check tag pre release
-        id: check_tag_pre_release
-        if: contains(steps.latest_tag.outputs.tag, 'build')
-        run: echo "check=true" >> $GITHUB_OUTPUT
-        
-      - name: Calculate new version name
-        id: calculate_new_version
-        run: |
-              LAST_TAG=${{ steps.latest_tag.outputs.tag }}
-              VERSION_CORE=$(echo $LAST_TAG | sed 's/^v//')
-
-              if [[ "${{ steps.check_tag_pre_release.outputs.check }}" == "true" ]]; then
-                NEW_VERSION_CORE=$(echo $VERSION_CORE | awk -F'.' -v OFS='.' '{$NF = $NF + 1;}1')
-                echo "new_version=$NEW_VERSION_CORE" >> $GITHUB_OUTPUT
-              else
-                echo "new_version=$VERSION_CORE.build.1" >> $GITHUB_OUTPUT
-              fi
-              
-      - name: Deploy to production
-        run: echo ${{ steps.calculate_new_version.outputs.new_version }}
-                 
-      #- name: Calculate new tag name
-       # id: calculate_new_version
-       # run: |
-          #    LAST_TAG=${{ steps.latest_tag.outputs.tag }}
-           #   VERSION_CORE=$(echo $LAST_TAG | sed 's/^v//')
-           #   NEW_VERSION_CORE=$(echo $VERSION_CORE | awk -F'.' -v OFS='.' '{$NF = $NF + 1;}1')
-           #   echo "new_version=$NEW_VERSION_CORE" >> $GITHUB_OUTPUT
-               
-   #   - name: Create Pre-Release
-    #    id: create_release
-     #   uses: actions/create-release@v1
-      #  env:
-       #   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        #with:
-         # tag_name: ${{ steps.calculate_new_tag.outputs.new_tag }}
-          #release_name: Pre-Release ${{ steps.calculate_new_tag.outputs.new_tag }}
-          #draft: false
-        #  prerelease: true
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+          fetch-depth: 0 
           
-      #- name: Restore dependencies
-       # run: dotnet restore
-      #- name: Build
-      #  run: dotnet build --configuration Release --no-restore
-      #- name: Pack NuGet package
-       # run: dotnet pack ${{ inputs.solution-path }} --configuration Release --no-build --output nupkgs/ /p:Version=${{ steps.calculate_new_version.outputs.new_version }}
-      #- name: Publish NuGet package
-       # run: dotnet nuget push "**/*.nupkg" --api-key ${{ secrets.NUGET_KEY  }} --source https://api.nuget.org/v3/index.json
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+        
+    - name: Find latest tag
+      id: latest_tag
+      uses: oprypin/find-latest-tag@v1
+      with:
+        repository: ${{ github.repository }}
+        releases-only: false
+        prefix: "v"
+
+    - name: Check tag pre release
+      id: check_tag_pre_release
+      if: contains(steps.latest_tag.outputs.tag, 'build')
+      run: echo "check=true" >> $GITHUB_OUTPUT
+        
+    - name: Calculate new version name
+      id: calculate_new_version
+      run: |
+            LAST_TAG=${{ steps.latest_tag.outputs.tag }}
+            VERSION_CORE=$(echo $LAST_TAG | sed 's/^v//')
+
+            if [[ "${{ steps.check_tag_pre_release.outputs.check }}" == "true" ]]; then
+              NEW_VERSION_CORE=$(echo $VERSION_CORE | awk -F'.' -v OFS='.' '{$NF = $NF + 1;}1')
+              echo "new_version=$NEW_VERSION_CORE" >> $GITHUB_OUTPUT
+            else
+              echo "new_version=$VERSION_CORE.build.1" >> $GITHUB_OUTPUT
+            fi
+              
+    - name: Create Pre-Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: "v${{ steps.calculate_new_version.outputs.new_version  }}"
+        release_name: "Pre-Release v${{ steps.calculate_new_version.outputs.new_version }}"
+        draft: false
+        prerelease: true
+          
+    - name: Restore dependencies
+      run: dotnet restore
+    - name: Build
+      run: dotnet build --configuration Release --no-restore
+    - name: Pack NuGet package
+      run: dotnet pack ${{ inputs.solution-path }} --configuration Release --no-build --output nupkgs/ /p:Version=${{ steps.calculate_new_version.outputs.new_version }}
+    - name: Publish NuGet package
+      run: dotnet nuget push "**/*.nupkg" --api-key ${{ secrets.NUGET_KEY  }} --source https://api.nuget.org/v3/index.json
