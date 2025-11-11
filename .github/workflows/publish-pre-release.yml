@@ -29,10 +29,15 @@ jobs:
       with:
         dotnet-version: 8.0.x
 
+    - name: Calculate new tag name
+      id: calculate_new_tag
+      run: |
+             echo "new_tag=${{ inputs.new_tag  }}" >> $GITHUB_OUTPUT
+           
     - name: Calculate new version name
       id: calculate_new_version
       run: |             
-              LAST_TAG = ${{ inputs.new_tag  }}
+              LAST_TAG = ${{ steps.calculate_new_tag.outputs.new_tag }}
               echo "new_version = $LAST_TAG" >> $GITHUB_OUTPUT
              # VERSION_CORE = $(echo $LAST_TAG | sed 's/^v//')
               # echo "new_version = $VERSION_CORE" >> $GITHUB_OUTPUT
