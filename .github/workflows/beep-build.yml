@@ -6,7 +6,14 @@ on:
       results-path:
         required: true
         type: string
-          
+      solution-path:
+        required: false
+        type: string
+        default: ''
+        
+    secrets:
+      NUGET_KEY:
+        required: true       
 jobs:  
   # === CI and Unit Tests ===
   ci-build-test:   
