@@ -16,7 +16,7 @@ on:
       #  required: true   
 
     outputs:
-      my_output_key:
+      is_create_Tag:
         value: ${{ jobs.deploy-prod.outputs.is_create_Tag }}
 jobs:  
   # === CI and Unit Tests ===
