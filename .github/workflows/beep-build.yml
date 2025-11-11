@@ -85,10 +85,12 @@ jobs:
                 echo "new_version=$NEW_VERSION_CORE" >> $GITHUB_OUTPUT
               else
                 NEW_VERSION_CORE= "${VERSION_CORE}.build.1"
-                echo "New tag: $VERSION_CORE"
                 echo "new_version=$NEW_VERSION_CORE" >> $GITHUB_OUTPUT
               fi
-                            
+              
+      - name: Deploy to production
+        run: echo ${{ steps.calculate_new_version.outputs.new_version }}
+                 
       #- name: Calculate new tag name
        # id: calculate_new_version
        # run: |
