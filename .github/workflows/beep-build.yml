@@ -85,22 +85,27 @@ jobs:
               NEW_VERSION=$(echo $NEW_TAG | sed 's/^v//')
               echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
               
-      - name: Create Pre-Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ steps.calculate_new_tag.outputs.new_tag }}
-          release_name: Pre-Release ${{ steps.calculate_new_tag.outputs.new_tag }}
-          draft: false
-          prerelease: true
+      - name: Create and push new tag
+        run: |
+          git tag ${{ steps.calculate_new_tag.outputs.new_tag }}
+          git push origin ${{ steps.calculate_new_tag.outputs.new_tag }}
           
-      - name: Restore dependencies
-        run: dotnet restore
-      - name: Build
-        run: dotnet build --configuration Release --no-restore
-      - name: Pack NuGet package
-        run: dotnet pack ${{ inputs.solution-path }} --configuration Release --no-build --output nupkgs/ /p:Version=${{ steps.calculate_new_version.outputs.new_version }}
-      - name: Publish NuGet package
-        run: dotnet nuget push "**/*.nupkg" --api-key ${{ secrets.NUGET_KEY  }} --source https://api.nuget.org/v3/index.json
+   #   - name: Create Pre-Release
+    #    id: create_release
+     #   uses: actions/create-release@v1
+      #  env:
+       #   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        #with:
+         # tag_name: ${{ steps.calculate_new_tag.outputs.new_tag }}
+          #release_name: Pre-Release ${{ steps.calculate_new_tag.outputs.new_tag }}
+          #draft: false
+        #  prerelease: true
+          
+      #- name: Restore dependencies
+       # run: dotnet restore
+      #- name: Build
+      #  run: dotnet build --configuration Release --no-restore
+      #- name: Pack NuGet package
+       # run: dotnet pack ${{ inputs.solution-path }} --configuration Release --no-build --output nupkgs/ /p:Version=${{ steps.calculate_new_version.outputs.new_version }}
+      #- name: Publish NuGet package
+       # run: dotnet nuget push "**/*.nupkg" --api-key ${{ secrets.NUGET_KEY  }} --source https://api.nuget.org/v3/index.json
