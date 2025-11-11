@@ -1,0 +1,92 @@
+name: Build And Test Project
+
+on:
+  workflow_call:
+    inputs:
+      results-path:
+        required: true
+        type: string
+          
+jobs:  
+  # === CI and Unit Tests ===
+  ci-build-test:   
+    name: Deploy to CI
+    runs-on: ubuntu-latest
+    environment: DEV
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+    - name: Restore dependencies
+      run: dotnet restore
+    - name: Build
+      run: dotnet build --no-restore
+    - name: Test
+      run: dotnet test --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx"
+    - name: Publish Test Results
+      uses: EnricoMi/publish-unit-test-result-action@v2
+      if: (!cancelled())
+      with:
+        files: ${{ inputs.results-path }}
+        
+  # === Deployment to Staging ===
+  deploy-staging:
+    name: Deploy to Staging
+    needs: ci-build-test
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: QA
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+  # === Deployment to Production ===
+  deploy-prod:
+    name: Deploy to Production
+    needs: deploy-staging
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: 
+      name: PROD    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Find latest tag
+        id: latest_tag
+        uses: oprypin/find-latest-tag@v1
+        with:
+          repository: ${{ github.repository }}
+          releases-only: false
+          prefix: "v"
+          
+      - name: Calculate new tag name
+        id: calculate_new_tag
+        run: |
+              LAST_TAG=${{ steps.latest_tag.outputs.tag }}
+              VERSION_CORE=$(echo $LAST_TAG | sed 's/^v//')
+              NEW_VERSION_CORE=$(echo $VERSION_CORE | awk -F'.' -v OFS='.' '{$NF = $NF + 1;}1')
+              NEW_TAG="v$NEW_VERSION_CORE"
+              echo "new_tag=$NEW_TAG" >> $GITHUB_OUTPUT
+
+      - name: Create Pre-Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.calculate_new_tag.outputs.new_tag }}
+          release_name: Pre-Release ${{ steps.calculate_new_tag.outputs.new_tag }}
+          draft: false
+          prerelease: true
+          
+      - name: Restore dependencies
+        run: dotnet restore
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+      - name: Pack NuGet package
+        run: dotnet pack ${{ inputs.solution-path }} --configuration Release --no-build --output nupkgs/ /p:Version=${{ steps.calculate_new_tag.outputs.new_tag }}
+      - name: Publish NuGet package
+        run: dotnet nuget push "**/*.nupkg" --api-key ${{ secrets.NUGET_KEY  }} --source https://api.nuget.org/v3/index.json
