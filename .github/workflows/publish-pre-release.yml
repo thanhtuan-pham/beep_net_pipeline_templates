@@ -32,10 +32,10 @@ jobs:
     - name: Calculate new tag name
       id: calculate_new_tag
       run: |
-             echo "new_tag=$(echo ${{ inputs.new_tag }} | sed 's/^v//')" >> $GITHUB_OUTPUT
+             echo "new_tag=v${{ inputs.new_tag }}" >> $GITHUB_OUTPUT
            
     - name: Calculate new version name
-      run: echo "v${{ inputs.new_tag }}"
+      run: echo "${{ steps.calculate_new_tag.outputs.new_tag }}"
            
     - name: Create Pre-Release
       id: create_release
