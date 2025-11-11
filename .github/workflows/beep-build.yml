@@ -75,7 +75,7 @@ jobs:
           releases-only: false
           prefix: "v"
 
-      - name: Calculate new version name
+      - name: Check tag pre release
         id: check_tag_pre_release
         if: contains(steps.latest_tag.outputs.tag, 'build')
         run: echo "check=true" >> $GITHUB_OUTPUT
