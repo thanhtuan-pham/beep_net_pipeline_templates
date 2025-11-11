@@ -29,14 +29,21 @@ jobs:
       with:
         dotnet-version: 8.0.x
 
+    - name: Calculate new tag name
+      id: calculate_new_tag
+      run: |             
+              NEW_VERSION_CORE= ${{ inputs.new_version  }}
+              NEW_TAG="v$NEW_VERSION_CORE"
+              echo "new_tag=$NEW_TAG" >> $GITHUB_OUTPUT
+           
     - name: Create Pre-Release
       id: create_release
       uses: actions/create-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: ${{ v$inputs.new_version  }}
-        release_name: Pre-Release ${{ v$inputs.new_version }}
+        tag_name: ${{ steps.calculate_new_tag.outputs.new_tag  }}
+        release_name: Pre-Release ${{ steps.calculate_new_tag.outputs.new_tag }}
         draft: false
         prerelease: true
           
