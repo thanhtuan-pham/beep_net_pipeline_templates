@@ -1,0 +1,18 @@
+name: Deployment to Staging
+
+on:
+  workflow_call:
+    inputs:
+      environment_name:
+            description: 'Name of the environment to deploy to'
+            required: true
+            type: string
+            
+jobs:          
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment_name }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
