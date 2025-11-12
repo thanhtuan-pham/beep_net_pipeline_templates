@@ -1,0 +1,36 @@
+name: CI and Unit Tests
+
+on:
+  workflow_call:
+    inputs:
+      environment_name:
+            description: 'Name of the environment to deploy to'
+            required: true
+            type: string
+            
+      results-path:
+        required: true
+        type: string
+        
+jobs:  
+  ci-build-test:   
+    name: Deploy to CI
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment_name }}
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+    - name: Restore dependencies
+      run: dotnet restore
+    - name: Build
+      run: dotnet build --no-restore
+    - name: Test
+      run: dotnet test --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx"
+    - name: Publish Test Results
+      uses: EnricoMi/publish-unit-test-result-action@v2
+      if: (!cancelled())
+      with:
+        files: ${{ inputs.results-path }}
