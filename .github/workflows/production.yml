@@ -38,18 +38,7 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 8.0.x
-              
-    - name: Create Pre-Release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: "v${{ inputs.new_version  }}"
-        release_name: "Pre-Release v${{ inputs.new_version }}"
-        draft: false
-        prerelease: true
-          
+                        
     - name: Restore dependencies
       run: dotnet restore
     - name: Build
