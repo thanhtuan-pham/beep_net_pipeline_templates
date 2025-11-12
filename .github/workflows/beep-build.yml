@@ -82,22 +82,31 @@ jobs:
           
     - name: Find latest tag
       if: steps.check_tags.outputs.has_tags == 'true'
-      id: latest_tag
+      id: find_latest_tag
       uses: oprypin/find-latest-tag@v1
       with:
           repository: ${{ github.repository }}
           releases-only: false
           prefix: "v"
-
+          
+    - name: Get latest tag
+      id: latest_tag
+      run: |
+          if [[ "${{ steps.check_tags.outputs.has_tags }}" == "true" ]]; then
+              echo "latest_tag=${{ steps.find_latest_tag.outputs.tag }}" >> $GITHUB_OUTPUT
+            else
+              echo "latest_tag=v0.0.0" >> $GITHUB_OUTPUT
+            fi
+      
     - name: Check tag pre release
       id: check_tag_pre_release
-      if: contains(steps.latest_tag.outputs.tag, 'build')
+      if: contains(steps.latest_tag.outputs.latest_tag, 'build')
       run: echo "check=true" >> $GITHUB_OUTPUT
         
     - name: Calculate new version name
       id: calculate_new_version
       run: |
-            LAST_TAG=${{ steps.latest_tag.outputs.tag }}
+            LAST_TAG=${{ steps.latest_tag.outputs.latest_tag }}
             VERSION_CORE=$(echo $LAST_TAG | sed 's/^v//')
 
             if [[ "${{ steps.check_tag_pre_release.outputs.check }}" == "true" ]]; then
