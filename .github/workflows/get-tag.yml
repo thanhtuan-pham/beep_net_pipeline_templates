@@ -75,3 +75,13 @@ jobs:
             else
               echo "new_version=$VERSION_CORE-build.1" >> $GITHUB_OUTPUT
             fi
+
+     - name: Create Pre-Release
+       uses: actions/create-release@v1
+       env:
+         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+       with:
+         tag_name: "v${{ steps.calculate_new_version.outputs.new_version  }}"
+         release_name: "Pre-Release v${{ steps.calculate_new_version.outputs.new_version }}"
+         draft: false
+         prerelease: true
