@@ -1,0 +1,66 @@
+name: Get tag
+
+on:
+  workflow_call:
+    inputs:
+      environment_name:
+            description: 'Name of the environment to deploy to'
+            required: true
+            type: string
+            
+    outputs:
+      new_version:
+        value: ${{ jobs.calculate_new_version.outputs.new_version }}  
+        
+jobs:  
+  deploy-prod:
+    name: Get tag
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment_name }}
+    
+    steps:
+    - name: Check for tags using git
+      id: check_tags
+      run: |
+          TAGS=$(git tag --list)
+          if [ -z "$TAGS" ]; then
+            echo "::set-output name=has_tags::false"
+          else
+            echo "::set-output name=has_tags::true"
+          fi   
+          
+    - name: Find latest tag
+      if: steps.check_tags.outputs.has_tags == 'true'
+      id: find_latest_tag
+      uses: oprypin/find-latest-tag@v1
+      with:
+          repository: ${{ github.repository }}
+          releases-only: false
+          prefix: "v"
+          
+    - name: Get latest tag
+      id: latest_tag
+      run: |
+          if [[ "${{ steps.check_tags.outputs.has_tags }}" == "true" ]]; then
+              echo "latest_tag=${{ steps.find_latest_tag.outputs.tag }}" >> $GITHUB_OUTPUT
+            else
+              echo "latest_tag=v0.0.0" >> $GITHUB_OUTPUT
+            fi
+      
+    - name: Check tag pre release
+      id: check_tag_pre_release
+      if: contains(steps.latest_tag.outputs.latest_tag, 'build')
+      run: echo "check=true" >> $GITHUB_OUTPUT
+        
+    - name: Calculate new version name
+      id: calculate_new_version
+      run: |
+            LAST_TAG=${{ steps.latest_tag.outputs.latest_tag }}
+            VERSION_CORE=$(echo $LAST_TAG | sed 's/^v//')
+
+            if [[ "${{ steps.check_tag_pre_release.outputs.check }}" == "true" ]]; then
+              NEW_VERSION_CORE=$(echo $VERSION_CORE | awk -F'.' -v OFS='.' '{$NF = $NF + 1;}1')
+              echo "new_version=$NEW_VERSION_CORE" >> $GITHUB_OUTPUT
+            else
+              echo "new_version=$VERSION_CORE-build.1" >> $GITHUB_OUTPUT
+            fi
