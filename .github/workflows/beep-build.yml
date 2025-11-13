@@ -35,6 +35,9 @@ jobs:
       with:
         files: ${{ inputs.results-path }}
         
+    - name: Publish Test Results 2
+      run: echo ${{ github.ref }}
+
   # === Deployment to Test ===
   deploy-test:
     name: Deploy to Test
