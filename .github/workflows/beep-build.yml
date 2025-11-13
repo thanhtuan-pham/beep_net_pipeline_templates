@@ -66,16 +66,16 @@ jobs:
         dotnet-version: 8.0.x
         
     - name: Check release
-      id: is_release
+      id: is_prerelease
       run: |
             if [[ "${{ github.ref }}" == "refs/heads/master" ]]; then
-              echo "::set-output name=check::false"
-            else
               echo "::set-output name=check::true"
+            else
+              echo "::set-output name=check::false"
             fi
           
     - name: Check for tags using git
-      if: steps.is_release.outputs.check == 'false'
+      if: steps.is_prerelease.outputs.check == 'true'
       id: check_tags
       run: |
           TAGS=$(git tag --list)
@@ -95,7 +95,7 @@ jobs:
           prefix: "v"
           
     - name: Get latest tag
-      if: steps.is_release.outputs.check == 'false'
+      if: steps.is_prerelease.outputs.check == 'true'
       id: latest_tag
       run: |
           if [[ "${{ steps.check_tags.outputs.has_tags }}" == "true" ]]; then
@@ -110,7 +110,7 @@ jobs:
       run: echo "check=true" >> $GITHUB_OUTPUT
         
     - name: Calculate new version
-      if: steps.is_release.outputs.check == 'false'
+      if: steps.is_prerelease.outputs.check == 'true'
       id: calculate_new_version
       run: |
             LAST_TAG=${{ steps.latest_tag.outputs.latest_tag }}
@@ -124,7 +124,7 @@ jobs:
             fi
 
     - name: Get tag
-      if: steps.is_release.outputs.check == 'true'
+      if: steps.is_prerelease.outputs.check == 'false'
       id: tag
       uses: dawidd6/action-get-tag@v1
       with:
@@ -133,7 +133,7 @@ jobs:
     - name: Calculate new version
       id: new_version
       run: |
-            if [[ "${{ steps.is_release.outputs.check }}" == "true" ]]; then
+            if [[ "${{ steps.is_prerelease.outputs.check }}" == "false" ]]; then
               echo "new_version=${{ steps.tag.outputs.tag }}" >> $GITHUB_OUTPUT
             else
               echo "new_version=${{ steps.calculate_new_version.outputs.new_version }}" >> $GITHUB_OUTPUT
