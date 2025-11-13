@@ -6,10 +6,6 @@ on:
       results-path:
         required: true
         type: string
-      solution-path:
-        required: false
-        type: string
-        default: ''
         
     secrets:
       NUGET_KEY:
@@ -39,25 +35,24 @@ jobs:
       with:
         files: ${{ inputs.results-path }}
         
-  # === Deployment to Staging ===
-  deploy-staging:
-    name: Deploy to Staging
+  # === Deployment to Test ===
+  deploy-test:
+    name: Deploy to Test
     needs: ci-build-test
     if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
-    environment: QA
+    environment: Test
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4 
 
-  # === Deployment to Production ===
+  # === Deployment to Production ===    
   deploy-prod:
     name: Deploy to Production
-    needs: deploy-staging
+    needs: deploy-test
     if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
-    environment: 
-      name: PROD 
+    environment: PROD 
       
     steps:
     - name: Checkout code
