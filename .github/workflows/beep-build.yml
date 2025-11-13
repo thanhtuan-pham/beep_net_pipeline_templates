@@ -39,7 +39,7 @@ jobs:
   deploy-test:
     name: Deploy to Test
     needs: ci-build-test
-    if: github.ref == 'refs/heads/master'
+    if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'v')
     runs-on: ubuntu-latest
     environment: Test
     steps:
