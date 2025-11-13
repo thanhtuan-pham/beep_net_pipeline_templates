@@ -69,9 +69,9 @@ jobs:
       id: is_release
       run: |
             if [[ "${{ github.ref }}" == "refs/heads/master" ]]; then
-              echo "::set-output name=check::true"
-            else
               echo "::set-output name=check::false"
+            else
+              echo "::set-output name=check::true"
             fi
           
     - name: Check for tags using git
@@ -123,11 +123,18 @@ jobs:
               echo "new_version=$VERSION_CORE-build.1" >> $GITHUB_OUTPUT
             fi
 
+    - name: Get tag
+      if: steps.is_release.outputs.check == 'true'
+      id: tag
+      uses: dawidd6/action-get-tag@v1
+      with:
+        strip_v: false
+        
     - name: Calculate new version
       id: new_version
       run: |
             if [[ "${{ steps.is_release.outputs.check }}" == "true" ]]; then
-              echo "new_version=1.1.20" >> $GITHUB_OUTPUT
+              echo "new_version=${{ steps.tag.outputs.tag }}" >> $GITHUB_OUTPUT
             else
               echo "new_version=${{ steps.calculate_new_version.outputs.new_version }}" >> $GITHUB_OUTPUT
             fi
