@@ -65,6 +65,15 @@ jobs:
       with:
         dotnet-version: 8.0.x
 
+    - name: Get tag
+      id: tag
+      uses: dawidd6/action-get-tag@v1
+      with:
+        strip_v: true
+        
+    - name: Check release2
+      run: echo ${{ steps.tag.outputs.tag }}
+
     - name: Check release
       if: startsWith(github.ref, 'refs/tags/v')
       id: is_release
