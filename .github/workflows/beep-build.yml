@@ -34,15 +34,12 @@ jobs:
       if: (!cancelled())
       with:
         files: ${{ inputs.results-path }}
-        
-    - name: Publish Test Results 2
-      run: echo ${{ github.ref }}
 
   # === Deployment to Test ===
   deploy-test:
     name: Deploy to Test
     needs: ci-build-test
-    if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'v')
+    if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     environment: Test
     steps:
@@ -53,7 +50,7 @@ jobs:
   deploy-prod:
     name: Deploy to Production
     needs: deploy-test
-    if: github.ref == 'refs/heads/master'
+    if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     environment: PROD 
       
@@ -68,7 +65,13 @@ jobs:
       with:
         dotnet-version: 8.0.x
 
+    - name: Check release
+      if: startsWith(github.ref, 'refs/tags/v')
+      id: is_release
+      run: echo "check=true" >> $GITHUB_OUTPUT
+
     - name: Check for tags using git
+      if: steps.is_release.outputs.check == 'false'
       id: check_tags
       run: |
           TAGS=$(git tag --list)
@@ -88,6 +91,7 @@ jobs:
           prefix: "v"
           
     - name: Get latest tag
+      if: steps.is_release.outputs.check == 'false'
       id: latest_tag
       run: |
           if [[ "${{ steps.check_tags.outputs.has_tags }}" == "true" ]]; then
@@ -101,7 +105,8 @@ jobs:
       if: contains(steps.latest_tag.outputs.latest_tag, 'build')
       run: echo "check=true" >> $GITHUB_OUTPUT
         
-    - name: Calculate new version name
+    - name: Calculate new version
+      if: steps.is_release.outputs.check == 'false'
       id: calculate_new_version
       run: |
             LAST_TAG=${{ steps.latest_tag.outputs.latest_tag }}
@@ -113,23 +118,31 @@ jobs:
             else
               echo "new_version=$VERSION_CORE-build.1" >> $GITHUB_OUTPUT
             fi
-              
-    - name: Create Pre-Release
-      id: create_release
+
+    - name: Calculate new version
+      id: new_version
+      run: |
+            if [[ "${{ steps.is_release.outputs.check }}" == "true" ]]; then
+              echo "new_version=1.1.20" >> $GITHUB_OUTPUT
+            else
+              echo "new_version=${{ steps.calculate_new_version.outputs.new_version }}" >> $GITHUB_OUTPUT
+            fi
+            
+    - name: Create Release
       uses: actions/create-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: "v${{ steps.calculate_new_version.outputs.new_version  }}"
-        release_name: "Pre-Release v${{ steps.calculate_new_version.outputs.new_version }}"
+        tag_name: "v${{ steps.new_version.outputs.new_version  }}"
+        release_name: "Pre-Release v${{ steps.new_version.outputs.new_version }}"
         draft: false
-        prerelease: true
+        prerelease: steps.is_release.outputs.check == 'false'
           
     - name: Restore dependencies
       run: dotnet restore
     - name: Build
       run: dotnet build --configuration Release --no-restore
     - name: Pack NuGet package
-      run: dotnet pack ${{ inputs.solution-path }} --configuration Release --no-build --output nupkgs/ /p:Version=${{ steps.calculate_new_version.outputs.new_version }}
+      run: dotnet pack ${{ inputs.solution-path }} --configuration Release --no-build --output nupkgs/ /p:Version=${{ steps.new_version.outputs.new_version }}
     - name: Publish NuGet package
       run: dotnet nuget push "**/*.nupkg" --api-key ${{ secrets.NUGET_KEY  }} --source https://api.nuget.org/v3/index.json
