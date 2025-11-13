@@ -147,7 +147,7 @@ jobs:
         tag_name: "v${{ steps.new_version.outputs.new_version  }}"
         release_name: "Pre-Release v${{ steps.new_version.outputs.new_version }}"
         draft: false
-        prerelease: steps.is_release.outputs.check == 'false'
+        prerelease: steps.is_release.outputs.check
           
     - name: Restore dependencies
       run: dotnet restore
