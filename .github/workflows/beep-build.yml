@@ -12,31 +12,10 @@ on:
         required: true   
         
 jobs:  
-
-  # === Get Branch ===    
-  get-branch:
-    name: Get Branch
-    runs-on: ubuntu-latest
-    outputs:
-      branch: ${{ steps.get-branch.outputs.branch }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-
-      - name: Get current branch
-        id: get-branch
-        run: |
-          raw=$(git branch -r --contains ${{ github.ref }})
-          branch=${raw##*/}
-          echo "branch=$branch" >> $GITHUB_OUTPUT
-          echo "Branch is $branch."
           
   # === CI and Unit Tests ===
   ci-build-test:   
     name: Deploy to CI
-    needs: get-branch
     runs-on: ubuntu-latest
     environment: DEV
     steps:
@@ -151,11 +130,33 @@ jobs:
     - name: Publish NuGet package
       run: dotnet nuget push "**/*.nupkg" --api-key ${{ secrets.NUGET_KEY  }} --source https://api.nuget.org/v3/index.json
 
+  # === Get Branch ===    
+  get-branch:
+    name: Get Branch
+    needs: deploy-test
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    outputs:
+      branch: ${{ steps.get-branch.outputs.branch }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Get current branch
+        id: get-branch
+        run: |
+          raw=$(git branch -r --contains ${{ github.ref }})
+          branch=${raw##*/}
+          echo "branch=$branch" >> $GITHUB_OUTPUT
+          echo "Branch is $branch."
+          
   # === Deployment to Production ===    
   deploy-release:
     name: Deploy to Release
-    needs: deploy-test
-    if: startsWith(github.ref, 'refs/tags/v') && ${{ needs.get-branch.outputs.branch == 'main' }}
+    needs: get-branch
+    if: ${{ needs.get-branch.outputs.branch == 'main' }}
     runs-on: ubuntu-latest
     environment: PROD 
       
