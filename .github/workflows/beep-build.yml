@@ -156,7 +156,7 @@ jobs:
   deploy-release:
     name: Deploy to Release
     needs: get-branch
-    if: ${{ needs.get-branch.outputs.branch == 'main' }}
+    if: ${{ needs.get-branch.outputs.branch == 'main1' }}
     runs-on: ubuntu-latest
     environment: PROD 
       
