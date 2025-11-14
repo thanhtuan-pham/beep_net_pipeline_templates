@@ -44,6 +44,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4 
+      - name: Checkout code
+        run: echo ${{ github.event.inputs.from_branch }}
 
   # === Deployment to Production ===    
   deploy-prerelease:
