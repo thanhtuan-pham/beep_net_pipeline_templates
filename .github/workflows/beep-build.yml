@@ -184,6 +184,7 @@ jobs:
         tag: v${{ steps.tag.outputs.tag }}
         
     - name: Create Release
+      if: steps.check-tag.outputs.exists == 'true'
       uses: actions/create-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
