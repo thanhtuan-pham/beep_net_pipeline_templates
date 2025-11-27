@@ -7,6 +7,11 @@ on:
         required: true
         type: string
         
+      solution-path:
+        required: false
+        type: string
+        default: ''
+        
     secrets:
       NUGET_KEY:
         required: true   
@@ -48,7 +53,7 @@ jobs:
           
   # === Deployment to Production ===    
   deploy-prerelease:
-    name: Deploy to Pre Release
+    name: Publish for untag
     needs: deploy-test
     if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
     runs-on: ubuntu-latest
@@ -130,33 +135,11 @@ jobs:
     - name: Publish NuGet package
       run: dotnet nuget push "**/*.nupkg" --api-key ${{ secrets.NUGET_KEY  }} --source https://api.nuget.org/v3/index.json
 
-  # === Get Branch ===    
-  get-branch:
-    name: Get Branch
-    needs: deploy-test
-    if: startsWith(github.ref, 'refs/tags/v')
-    runs-on: ubuntu-latest
-    outputs:
-      branch: ${{ steps.get-branch.outputs.branch }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-
-      - name: Get current branch
-        id: get-branch
-        run: |
-          raw=$(git branch -r --contains ${{ github.ref }})
-          branch=${raw##*/}
-          echo "branch=$branch" >> $GITHUB_OUTPUT
-          echo "Branch is $branch."
-          
   # === Deployment to Production ===    
   deploy-release:
-    name: Deploy to Release
-    needs: get-branch
-    if: ${{ needs.get-branch.outputs.branch == 'main' }}
+    name: Publish for tag
+    needs: deploy-test
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     environment: PROD 
       
@@ -170,7 +153,7 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 8.0.x
-        
+          
     - name: Get tag
       id: tag
       uses: dawidd6/action-get-tag@v1
