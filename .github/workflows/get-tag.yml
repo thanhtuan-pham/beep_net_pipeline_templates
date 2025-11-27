@@ -83,9 +83,9 @@ jobs:
        id: get-tag
        run: |
          if [[ "${{ steps.tag-release.outputs.tag }}" == "" ]]; then
-              echo "new_version=${{ steps.tag-release.outputs.tag }}" >> $GITHUB_OUTPUT
-            else
               echo "new_version=${{ steps.tag-pre-release.outputs.new_version }}" >> $GITHUB_OUTPUT
+            else
+              echo "new_version=${{ steps.tag-release.outputs.tag }}" >> $GITHUB_OUTPUT
           fi
           
      - name: Get latest tag a
