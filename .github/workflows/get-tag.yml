@@ -10,7 +10,7 @@ jobs:
     name: Get tag
     runs-on: ubuntu-latest
     outputs:
-      new_version: ${{ steps.tag-pre-release.outputs.new_version }}
+      new_version: ${{ steps.get-tag.outputs.new_version }}
       
     steps:
      - name: Checkout code
@@ -82,5 +82,11 @@ jobs:
      - name: Get latest tag
        id: get-tag
        run: |
-          echo ${{ steps.tag-release.outputs.tag }}
-          echo ${{ steps.tag-pre-release.outputs.new_version }}
+         if [[ "${{ steps.check_tags.outputs.has_tags }}" == "true" ]]; then
+              echo "new_version=${{ steps.tag-release.outputs.tag }}" >> $GITHUB_OUTPUT
+            else
+              echo "new_version=${{ steps.tag-pre-release.outputs.new_version }}" >> $GITHUB_OUTPUT
+          fi
+          
+     - name: Get latest tag a
+       run: echo ${{ steps.get-tag.outputs.new_version }}
