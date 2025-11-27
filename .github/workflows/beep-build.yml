@@ -170,7 +170,19 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 8.0.x
-          
+        
+    - name: Get tag
+      id: tag
+      uses: dawidd6/action-get-tag@v1
+      with:
+        strip_v: true
+        
+    - name: Check if tag exists
+      id: check-tag
+      uses: mukunku/tag-exists-action@v1.6.0
+      with:
+        tag: v${{ steps.tag.outputs.tag }}
+        
     - name: Create Release
       uses: actions/create-release@v1
       env:
@@ -180,12 +192,6 @@ jobs:
         release_name: "Release v${{ github.ref }}"
         draft: false
         prerelease: false
-
-    - name: Get tag
-      id: tag
-      uses: dawidd6/action-get-tag@v1
-      with:
-        strip_v: true
         
     - name: Restore dependencies
       run: dotnet restore
