@@ -162,13 +162,12 @@ jobs:
         
     - name: Check Release Exists
       id: check_release
-      uses: f2calv/gha-check-release-exists@v2 # Or insightsengineering/release-existence-action@v1
+      uses: insightsengineering/release-existence-action@v1
       with:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        ReleaseName: "Release v${{ steps.tag.outputs.tag }}"
+        release-tag: v${{ steps.tag.outputs.tag }}
         
     - name: Create Release
-      if: steps.check_release.outputs.ReleaseExists == 'false'
+      if: steps.check_release.outputs.release-exists == 'false'
       uses: actions/create-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -179,9 +178,9 @@ jobs:
         prerelease: false
         
     - name: Restore dependencies
-      run: dotnet restore
+      run: dotnet restore ${{ inputs.solution-path }}
     - name: Build
-      run: dotnet build --configuration Release --no-restore
+      run: dotnet build ${{ inputs.solution-path }} --configuration Release --no-restore
     - name: Pack NuGet package
       run: dotnet pack ${{ inputs.solution-path }} --configuration Release --no-build --output nupkgs/ /p:Version=${{ steps.tag.outputs.tag }}
     - name: Publish NuGet package
