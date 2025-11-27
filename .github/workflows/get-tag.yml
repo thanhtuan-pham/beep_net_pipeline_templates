@@ -81,4 +81,6 @@ jobs:
             
      - name: Get latest tag
        id: get-tag
-       run: echo ${{ steps.tag-release.outputs.tag }}
+       run: |
+          echo ${{ steps.tag-release.outputs.tag }}
+          echo ${{ steps.tag-pre-release.outputs.new_version }}
