@@ -78,7 +78,13 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 8.0.x
-                  
+        
+    - name: Check Release Exists
+      id: check_release
+      uses: insightsengineering/release-existence-action@v1
+      with:
+        release-tag: v${{ inputs.version }}
+        
     - name: Create Pre Release
       if: steps.check_release.outputs.release-exists == 'false'
       uses: actions/create-release@v1
