@@ -8,8 +8,8 @@ on:
 jobs:  
   get-tag:
     name: Get tag
-    environment: DEV
     runs-on: ubuntu-latest
+    environment: DEV
     outputs:
       new_version: ${{ steps.get-tag.outputs.new_version }}
       
