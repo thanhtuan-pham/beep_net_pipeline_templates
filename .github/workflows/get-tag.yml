@@ -26,9 +26,7 @@ jobs:
      - name: Get tag
        if: startsWith(github.ref, 'refs/tags/v')
        id: tag-release
-       uses: dawidd6/action-get-tag@v1
-       with:
-         strip_v: true
+       uses: jannemattila/get-version-from-tag@v4
         
      - name: Check for tags using git
        if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
@@ -85,7 +83,7 @@ jobs:
          if [[ "${{ steps.tag-release.outputs.tag }}" == "" ]]; then
               echo "new_version=${{ steps.tag-pre-release.outputs.new_version }}" >> $GITHUB_OUTPUT
             else
-              echo "new_version=${{ steps.tag-release.outputs.tag }}" >> $GITHUB_OUTPUT
+              echo "new_version=${{ steps.tag-release.outputs.version }}" >> $GITHUB_OUTPUT
           fi
           
      - name: Get latest tag a
