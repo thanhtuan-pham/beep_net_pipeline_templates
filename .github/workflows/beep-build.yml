@@ -23,8 +23,10 @@ on:
         
     secrets:
       NUGET_KEY:
-        required: true   
+        required: true  
         
+      SNYK_TOKEN:
+        required: true  
 jobs:  
           
   # === CI and Unit Tests ===
@@ -49,7 +51,22 @@ jobs:
       if: (!cancelled())
       with:
         files: ${{ inputs.results-path }}
+        
+    - name: Install Snyk
+      run: npm install -g snyk@latest
+
+    - name: Authenticate
+      run: snyk auth ${{ secrets.SNYK_TOKEN }}
+
+    - name: Scan dependencies
+      run: snyk test --all-projects
           
+    - name: Scan code
+      run: snyk code test
+      
+    - name: Monitor project on Snyk 
+      run: snyk monitor --all-projects    
+      
   # === Deployment to Test ===
   deploy-test:
     name: Deploy to Test
