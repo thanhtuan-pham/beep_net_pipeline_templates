@@ -44,7 +44,7 @@ jobs:
       run: dotnet restore
     - name: Build
       run: dotnet build --no-restore
-    - name: Test
+    - name: Test Unit Tests
       env:
           BEEP_GLOBAL_USER: global
           BEEP_GLOBAL_PASSWORD: 1
@@ -57,6 +57,21 @@ jobs:
             echo "Testing {}"
             dotnet test "{}" --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx"
           '
+    - name: Test Integration Tests
+      if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
+      env:
+          BEEP_GLOBAL_USER: global
+          BEEP_GLOBAL_PASSWORD: 1
+          BEEP_GLOBAL_TEST_USER: global
+          BEEP_GLOBAL_TEST_PASSWORD: 1
+          BEEP_LOCAL_TEST_USER: local
+          BEEP_LOCAL_TEST_PASSWORD: 1
+      run: |
+          find . -name "*.Tests.Integration.csproj" | xargs -I {} -P 4 sh -c '
+            echo "Testing {}"
+            dotnet test "{}" --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx"
+          '
+          
     - name: Publish Test Results
       uses: EnricoMi/publish-unit-test-result-action@v2
       if: (!cancelled())
