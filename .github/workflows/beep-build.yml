@@ -58,7 +58,7 @@ jobs:
             dotnet test "{}" --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx"
           '
     - name: Test Integration Tests
-      if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
+      if: startsWith(github.ref, 'refs/tags/v')
       env:
           BEEP_GLOBAL_USER: global
           BEEP_GLOBAL_PASSWORD: 1
