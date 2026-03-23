@@ -52,7 +52,11 @@ jobs:
           BEEP_GLOBAL_TEST_PASSWORD: 1
           BEEP_LOCAL_TEST_USER: local
           BEEP_LOCAL_TEST_PASSWORD: 1
-      run: dotnet test --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx"
+      run: |
+          find . -name "*.Tests.Unit.csproj" | xargs -I {} -P 4 sh -c '
+            echo "Testing {}"
+            dotnet test "{}" --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx"
+          '
     - name: Publish Test Results
       uses: EnricoMi/publish-unit-test-result-action@v2
       if: (!cancelled())
