@@ -63,6 +63,7 @@ jobs:
             fi
             
      - name: Get latest release tag
+       if: steps.check_tags.outputs.has_tags == 'true'
        id: release
        shell: bash
        run: |
