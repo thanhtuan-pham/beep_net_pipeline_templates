@@ -62,7 +62,7 @@ jobs:
               echo "latest_tag=v1.0.0" >> $GITHUB_OUTPUT
             fi
             
-     - name: Get latest tag
+     - name: Get latest release tag
        id: release
        shell: bash
        run: |
