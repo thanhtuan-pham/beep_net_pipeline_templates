@@ -72,6 +72,7 @@ jobs:
           echo "tag=$TAG" >> $GITHUB_OUTPUT
 
      - name: Select final tag
+       if: steps.check_tags.outputs.has_tags == 'true'
        id: final_tag
        run: |
          LATEST_TAG="${{ steps.latest_tag.outputs.latest_tag }}"
@@ -91,14 +92,14 @@ jobs:
           
      - name: Check tag pre release
        id: check_tag_pre_release
-       if: contains(steps.latest_tag.outputs.latest_tag, 'build')
+       if: contains(steps.final_tag.outputs.tag, 'build')
        run: echo "check=true" >> $GITHUB_OUTPUT
         
      - name: Calculate new version
        if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
        id: tag-pre-release
        run: |
-            LAST_TAG=${{ steps.latest_tag.outputs.latest_tag }}
+            LAST_TAG=${{ steps.final_tag.outputs.tag }}
             VERSION_CORE=$(echo $LAST_TAG | sed 's/^v//')
 
             if [[ "${{ steps.check_tag_pre_release.outputs.check }}" == "true" ]]; then
