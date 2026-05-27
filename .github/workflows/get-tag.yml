@@ -62,14 +62,18 @@ jobs:
               echo "latest_tag=v1.0.0" >> $GITHUB_OUTPUT
             fi
             
-     - name: Get latest release tag
-       if: steps.check_tags.outputs.has_tags == 'true'
+     - name: Get latest tag
        id: release
+       shell: bash
        run: |
-         TAG=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest \
-          | jq -r .tag_name)
+          git fetch --tags --force
 
-          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          TAG=$(git tag --sort=-v:refname \
+            | grep -E '^v?[0-9]+\.[0-9]+\.[0-9]+$' \
+            | head -n 1)
+
+          echo "Latest tag: $TAG"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
 
      - name: Select final tag
        if: steps.check_tags.outputs.has_tags == 'true'
