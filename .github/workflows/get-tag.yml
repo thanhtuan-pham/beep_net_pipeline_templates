@@ -59,7 +59,7 @@ jobs:
           if [[ "${{ steps.check_tags.outputs.has_tags }}" == "true" ]]; then
               echo "latest_tag=${{ steps.find_latest_tag.outputs.tag }}" >> $GITHUB_OUTPUT
             else
-              echo "latest_tag=v0.0.0" >> $GITHUB_OUTPUT
+              echo "latest_tag=v1.0.0" >> $GITHUB_OUTPUT
             fi
       
      - name: Check tag pre release
@@ -78,7 +78,8 @@ jobs:
               NEW_VERSION_CORE=$(echo $VERSION_CORE | awk -F'.' -v OFS='.' '{$NF = $NF + 1;}1')
               echo "new_version=$NEW_VERSION_CORE" >> $GITHUB_OUTPUT
             else
-              echo "new_version=$VERSION_CORE-build.1" >> $GITHUB_OUTPUT
+              NEW_VERSION_CORE=$(echo $VERSION_CORE | awk -F'.' -v OFS='.' '{$NF = $NF + 1;}1')
+              echo "new_version=$NEW_VERSION_CORE-build.1" >> $GITHUB_OUTPUT
             fi
             
      - name: Get latest tag
@@ -89,6 +90,3 @@ jobs:
             else
               echo "new_version=${{ steps.tag-release.outputs.version }}" >> $GITHUB_OUTPUT
           fi
-          
-     - name: Get latest tag a
-       run: echo ${{ steps.get-tag.outputs.new_version }}
