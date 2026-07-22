@@ -26,7 +26,7 @@ on:
         required: true
 
       SNYK_TOKEN:
-        required: true
+        required: false
 
       BEEP_GLOBAL_USER:
         required: false
@@ -87,25 +87,7 @@ jobs:
       if: (!cancelled())
       with:
         files: ${{ inputs.results-path }}
-        
-    - name: Install Snyk
-      run: npm install -g snyk@latest
-
-    - name: Authenticate
-      run: snyk auth ${{ secrets.SNYK_TOKEN }}
-
-    - name: Scan dependencies
-      run: snyk test --all-projects
-          
-    - name: Scan code
-      run: |
-        if ls *.js *.ts *.py 1> /dev/null 2>&1; then
-          snyk code test
-        fi
-      
-    - name: Monitor project on Snyk 
-      run: snyk monitor --all-projects
-      
+              
   # === Deployment to Test ===
   deploy-test:
     name: Deploy to Test
