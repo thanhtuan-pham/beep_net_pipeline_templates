@@ -1,0 +1,54 @@
+name: Deploy
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+
+    secrets:
+      SERVER_HOST:
+        required: true
+
+      SERVER_USER:
+        required: true
+
+      SERVER_SSH_KEY:
+        required: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Resolve deployment path
+        id: deployment-path
+        shell: pwsh
+        run: |
+          $paths = @{
+            ci   = "C:\inetpub\wwwroot\myapp-ci"
+            test = "C:\inetpub\wwwroot\myapp-test"
+            prob = "C:\inetpub\wwwroot\myapp-prob"
+          }
+
+          $path = $paths["${{ inputs.environment }}"]
+
+          if (-not $path) {
+            throw "Invalid environment: ${{ inputs.environment }}"
+          }
+
+          "path=$path" >> $env:GITHUB_OUTPUT
+
+      - name: Deploy application
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: 22
+          script: |
+            cd "${{ steps.deployment-path.outputs.path }}"
+            git pull origin main
+            powershell -ExecutionPolicy Bypass -File deploy.ps1
