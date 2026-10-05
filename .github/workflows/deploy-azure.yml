@@ -3,6 +3,10 @@ name: Deploy
 on:
   workflow_call:
     inputs:
+      app-name:
+        required: true
+        type: string
+        
       environment:
         required: true
         type: string
@@ -27,16 +31,20 @@ jobs:
         id: deployment-path
         shell: pwsh
         run: |
+          $basePath = "C:\inetpub\wwwroot"
+          $appName = "${{ inputs.app-name }}"
+          $environment = "${{ inputs.environment }}"
+
           $paths = @{
-            ci   = "C:\inetpub\wwwroot\myapp-ci"
-            test = "C:\inetpub\wwwroot\myapp-test"
-            prob = "C:\inetpub\wwwroot\myapp-prob"
+            ci   = "$basePath\$appName-ci"
+            test = "$basePath\$appName-test"
+            prob = "$basePath\$appName-prob"
           }
 
-          $path = $paths["${{ inputs.environment }}"]
+          $path = $paths[$environment]
 
           if (-not $path) {
-            throw "Invalid environment: ${{ inputs.environment }}"
+            throw "Invalid environment: $environment"
           }
 
           "path=$path" >> $env:GITHUB_OUTPUT
