@@ -4,7 +4,9 @@ on:
   workflow_call:            
     outputs:
       new_version:
-        value: ${{ jobs.get-tag.outputs.new_version }}                              
+        value: ${{ jobs.get-tag.outputs.new_version }}  
+      environment:
+        value: ${{ jobs.get-tag.outputs.environment }}
 jobs:  
   get-tag:
     name: Get tag
@@ -12,6 +14,7 @@ jobs:
     environment: DEV
     outputs:
       new_version: ${{ steps.get-tag.outputs.new_version }}
+      environment: ${{ steps.tag-release.outputs.environment || ''}}
       
     steps:
      - name: Checkout code
@@ -30,8 +33,11 @@ jobs:
        run: |
           TAG_REF="${{ github.ref }}"
           VERSION=$(echo "$TAG_REF" | sed -E 's/^refs\/tags\/v?([0-9.]*).*$/\1/')
+          ENVIRONMENT=$(echo "$TAG_REF" | sed -E 's/^refs\/tags\/v[0-9.]+-(.*)$/\1/')
+
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-        
+          echo "environment=$ENVIRONMENT" >> "$GITHUB_OUTPUT"
+
      - name: Check for tags using git
        if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
        id: check_tags
@@ -110,12 +116,13 @@ jobs:
             if [[ "${{ steps.check_tag_pre_release.outputs.check }}" == "true" ]]; then
               NEW_VERSION_CORE=$(echo $VERSION_CORE | awk -F'.' -v OFS='.' '{$NF = $NF + 1;}1')
               echo "new_version=$NEW_VERSION_CORE" >> $GITHUB_OUTPUT
-            else
+            else      
               if [[ -z "$VERSION_CORE" ]]; then
                 NEW_VERSION_CORE="1.0.0"
               else
                 NEW_VERSION_CORE=$(echo $VERSION_CORE | awk -F'.' -v OFS='.' '{$NF = $NF + 1;}1')
               fi
+              
               echo "new_version=$NEW_VERSION_CORE-build.1" >> $GITHUB_OUTPUT
             fi
             
