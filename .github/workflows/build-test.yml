@@ -49,23 +49,6 @@ jobs:
       - name: Build
         run: dotnet build --no-restore
 
-      - name: Wait for Mailpit
-        run: |
-          echo "Waiting for Mailpit..."
-
-          for i in {1..30}; do
-            if curl --silent --fail http://localhost:8025/api/v1/messages > /dev/null; then
-              echo "Mailpit is ready!"
-              exit 0
-            fi
-
-            echo "Mailpit is not ready yet... attempt $i/30"
-            sleep 1
-          done
-
-          echo "Mailpit failed to start"
-          exit 1
-
       - name: Test Unit Tests
         run: |
           find . -name "*.Tests.Unit.csproj" | xargs -I {} -P 4 sh -c '
