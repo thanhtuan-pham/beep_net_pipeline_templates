@@ -6,7 +6,31 @@ on:
       results-path:
         required: true
         type: string
-          
+        
+    secrets:
+      NUGET_KEY:
+        required: true
+
+      SNYK_TOKEN:
+        required: false
+
+      BEEP_GLOBAL_USER:
+        required: false
+
+      BEEP_GLOBAL_PASSWORD:
+        required: false
+        
+      BEEP_GLOBAL_TEST_USER:
+        required: false
+
+      BEEP_GLOBAL_TEST_PASSWORD:
+        required: false
+
+      BEEP_LOCAL_TEST_USER:
+        required: false
+
+      BEEP_LOCAL_TEST_PASSWORD:
+        required: false      
 jobs:  
  ci-build-test:   
     name: Deploy to CI
