@@ -29,6 +29,14 @@ jobs:
  ci-build-test:   
     name: Deploy to CI
     runs-on: ubuntu-latest
+
+    services:
+      mailpit:
+        image: axllent/mailpit:latest
+        ports:
+          - 1025:1025   # Exposes SMTP port for NLog
+          - 8025:8025   # Exposes Web/REST API port for MSTest verification
+          
     environment: DEV
     steps:
     - uses: actions/checkout@v4
