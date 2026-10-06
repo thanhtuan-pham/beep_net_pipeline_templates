@@ -26,7 +26,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-
+      - name: Resolve deployment path2
+        run: |
+         echo "App: ${{ inputs.app-name }}"
+         echo "Environment: ${{ inputs.environment }}"
+          
       - name: Resolve deployment path
         id: deployment-path
         shell: pwsh
