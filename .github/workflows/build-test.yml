@@ -22,10 +22,11 @@ on:
         required: false
 
 jobs:
-  ci-build-test:
-    name: Deploy to CI
-    runs-on: ubuntu-latest
 
+ services-email:
+    name: Services email
+    runs-on: ubuntu-latest
+    
     services:
       mailpit:
         image: axllent/mailpit:latest
@@ -33,6 +34,12 @@ jobs:
           - 1025:1025
           - 8025:8025
 
+    
+  ci-build-test:
+    name: Deploy to CI
+    needs: services-email
+    runs-on: ubuntu-latest
+  
     environment: DEV
 
     steps:
