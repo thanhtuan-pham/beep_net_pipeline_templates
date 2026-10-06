@@ -6,27 +6,23 @@ on:
       results-path:
         required: true
         type: string
-        
+
     secrets:
       BEEP_GLOBAL_USER:
         required: false
-
       BEEP_GLOBAL_PASSWORD:
         required: false
-        
       BEEP_GLOBAL_TEST_USER:
         required: false
-
       BEEP_GLOBAL_TEST_PASSWORD:
         required: false
-
       BEEP_LOCAL_TEST_USER:
         required: false
-
       BEEP_LOCAL_TEST_PASSWORD:
-        required: false      
-jobs:  
- ci-build-test:   
+        required: false
+
+jobs:
+  ci-build-test:
     name: Deploy to CI
     runs-on: ubuntu-latest
 
@@ -34,43 +30,72 @@ jobs:
       mailpit:
         image: axllent/mailpit:latest
         ports:
-          - 1025:1025   # Exposes SMTP port for NLog
-          - 8025:8025   # Exposes Web/REST API port for MSTest verification
-          
+          - 1025:1025
+          - 8025:8025
+
     environment: DEV
+
     steps:
-    - uses: actions/checkout@v4
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: 10.0.x
-    - name: Restore dependencies
-      run: dotnet restore
-    - name: Build
-      run: dotnet build --no-restore
-    - name: Test Unit Tests
-      run: |
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --no-restore
+
+      - name: Wait for Mailpit
+        run: |
+          echo "Waiting for Mailpit..."
+
+          for i in {1..30}; do
+            if curl --silent --fail http://localhost:8025/api/v1/messages > /dev/null; then
+              echo "Mailpit is ready!"
+              exit 0
+            fi
+
+            echo "Mailpit is not ready yet... attempt $i/30"
+            sleep 1
+          done
+
+          echo "Mailpit failed to start"
+          exit 1
+
+      - name: Test Unit Tests
+        run: |
           find . -name "*.Tests.Unit.csproj" | xargs -I {} -P 4 sh -c '
             echo "Testing {}"
-            dotnet test "{}" --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx"
+            dotnet test "{}" \
+              --no-build \
+              --verbosity normal \
+              --logger "trx;LogFileName=test-results.trx"
           '
-    - name: Test Integration Tests
-      if: startsWith(github.ref, 'refs/tags/v')
-      env:
+
+      - name: Test Integration Tests
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
           BEEP_GLOBAL_USER: ${{ secrets.BEEP_GLOBAL_USER }}
           BEEP_GLOBAL_PASSWORD: ${{ secrets.BEEP_GLOBAL_PASSWORD }}
           BEEP_GLOBAL_TEST_USER: ${{ secrets.BEEP_GLOBAL_TEST_USER }}
           BEEP_GLOBAL_TEST_PASSWORD: ${{ secrets.BEEP_GLOBAL_TEST_PASSWORD }}
           BEEP_LOCAL_TEST_USER: ${{ secrets.BEEP_LOCAL_TEST_USER }}
           BEEP_LOCAL_TEST_PASSWORD: ${{ secrets.BEEP_LOCAL_TEST_PASSWORD }}
-      run: |
+        run: |
           find . -name "*.Tests.Integration.csproj" | xargs -I {} -P 4 sh -c '
             echo "Testing {}"
-            dotnet test "{}" --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx"
+            dotnet test "{}" \
+              --no-build \
+              --verbosity normal \
+              --logger "trx;LogFileName=test-results.trx"
           '
-    - name: Publish Test Results
-      uses: EnricoMi/publish-unit-test-result-action@v2
-      if: (!cancelled())
-      with:
-        files: ${{ inputs.results-path }}
-      
+
+      - name: Publish Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        if: (!cancelled())
+        with:
+          files: ${{ inputs.results-path }}
