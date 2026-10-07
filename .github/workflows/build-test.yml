@@ -6,7 +6,19 @@ on:
       results-path:
         required: true
         type: string
-
+        
+      solution-path:
+        description: "Solution or project path"
+        required: false
+        type: string
+        default: ""
+        
+      use-mail-service:
+        description: "Start Mailpit for tests"
+        required: false
+        type: boolean
+        default: true
+        
     secrets:
       BEEP_GLOBAL_USER:
         required: false
@@ -23,50 +35,149 @@ on:
 
 jobs:
 
- services-email:
-    name: Services email
-    runs-on: ubuntu-latest
-    
-    services:
-      mailpit:
-        image: axllent/mailpit:latest
-        ports:
-          - 1025:1025
-          - 8025:8025
 
-    
   ci-build-test:
-    name: Deploy to CI
-    needs: services-email
+    name: Build and Test
     runs-on: ubuntu-latest
-  
     environment: DEV
 
     steps:
-      - uses: actions/checkout@v4
+
+      # --------------------------------------------------------
+      # Checkout
+      # --------------------------------------------------------
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+
+      # --------------------------------------------------------
+      # .NET
+      # --------------------------------------------------------
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 10.0.x
+          dotnet-version: "10.0.x"
+
+
+      # --------------------------------------------------------
+      # Dependencies
+      # --------------------------------------------------------
 
       - name: Restore dependencies
-        run: dotnet restore
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ -n "${{ inputs.solution-path }}" ]; then
+            dotnet restore "${{ inputs.solution-path }}"
+          else
+            dotnet restore
+          fi
+
+
+      # --------------------------------------------------------
+      # Build
+      # --------------------------------------------------------
 
       - name: Build
-        run: dotnet build --no-restore
-
-      - name: Test Unit Tests
+        shell: bash
         run: |
-          find . -name "*.Tests.Unit.csproj" | xargs -I {} -P 4 sh -c '
-            echo "Testing {}"
-            dotnet test "{}" \
+          set -euo pipefail
+
+          if [ -n "${{ inputs.solution-path }}" ]; then
+            dotnet build \
+              "${{ inputs.solution-path }}" \
+              --no-restore
+          else
+            dotnet build --no-restore
+          fi
+
+
+      # --------------------------------------------------------
+      # Mailpit
+      # --------------------------------------------------------
+
+      - name: Start Mailpit
+        if: inputs.use-mail-service
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          echo "Starting Mailpit..."
+
+          docker run -d \
+            --name mailpit \
+            -p 1025:1025 \
+            -p 8025:8025 \
+            axllent/mailpit:latest
+
+          echo "Waiting for Mailpit to become ready..."
+
+          for i in {1..30}; do
+            if curl -fsS \
+              http://localhost:8025/api/v1/info \
+              >/dev/null 2>&1; then
+
+              echo "Mailpit is ready."
+              exit 0
+            fi
+
+            echo "Waiting for Mailpit... attempt $i/30"
+            sleep 1
+          done
+
+          echo "ERROR: Mailpit failed to start."
+
+          docker logs mailpit || true
+
+          exit 1
+
+
+      # --------------------------------------------------------
+      # Unit Tests
+      # --------------------------------------------------------
+
+      - name: Run Unit Tests
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mkdir -p TestResults
+
+          PROJECTS=$(find . -name "*.Tests.Unit.csproj" -print)
+
+          if [ -z "$PROJECTS" ]; then
+            echo "No unit test projects found."
+            exit 0
+          fi
+
+          while IFS= read -r PROJECT; do
+
+            echo ""
+            echo "========================================"
+            echo "Testing: $PROJECT"
+            echo "========================================"
+
+            PROJECT_NAME=$(basename "$PROJECT" .csproj)
+
+            dotnet test "$PROJECT" \
               --no-build \
               --verbosity normal \
-              --logger "trx;LogFileName=test-results.trx"
-          '
+              --logger "trx;LogFileName=${PROJECT_NAME}.trx" \
+              --results-directory "./TestResults"
 
-      - name: Test Integration Tests
+          done <<< "$PROJECTS"
+
+
+      # --------------------------------------------------------
+      # Integration Tests
+      #
+      # Currently runs only for version tags.
+      # --------------------------------------------------------
+
+      - name: Run Integration Tests
         if: startsWith(github.ref, 'refs/tags/v')
         env:
           BEEP_GLOBAL_USER: ${{ secrets.BEEP_GLOBAL_USER }}
@@ -75,17 +186,59 @@ jobs:
           BEEP_GLOBAL_TEST_PASSWORD: ${{ secrets.BEEP_GLOBAL_TEST_PASSWORD }}
           BEEP_LOCAL_TEST_USER: ${{ secrets.BEEP_LOCAL_TEST_USER }}
           BEEP_LOCAL_TEST_PASSWORD: ${{ secrets.BEEP_LOCAL_TEST_PASSWORD }}
+        shell: bash
         run: |
-          find . -name "*.Tests.Integration.csproj" | xargs -I {} -P 4 sh -c '
-            echo "Testing {}"
-            dotnet test "{}" \
+          set -euo pipefail
+
+          mkdir -p TestResults
+
+          PROJECTS=$(find . -name "*.Tests.Integration.csproj" -print)
+
+          if [ -z "$PROJECTS" ]; then
+            echo "No integration test projects found."
+            exit 0
+          fi
+
+          while IFS= read -r PROJECT; do
+
+            echo ""
+            echo "========================================"
+            echo "Testing: $PROJECT"
+            echo "========================================"
+
+            PROJECT_NAME=$(basename "$PROJECT" .csproj)
+
+            dotnet test "$PROJECT" \
               --no-build \
               --verbosity normal \
-              --logger "trx;LogFileName=test-results.trx"
-          '
+              --logger "trx;LogFileName=${PROJECT_NAME}.trx" \
+              --results-directory "./TestResults"
+
+          done <<< "$PROJECTS"
+
+
+      # --------------------------------------------------------
+      # Publish Test Results
+      # --------------------------------------------------------
 
       - name: Publish Test Results
+        if: always()
         uses: EnricoMi/publish-unit-test-result-action@v2
-        if: (!cancelled())
         with:
           files: ${{ inputs.results-path }}
+
+
+      # --------------------------------------------------------
+      # Mailpit Cleanup
+      # --------------------------------------------------------
+
+      - name: Stop Mailpit
+        if: always() && inputs.use-mail-service
+        shell: bash
+        run: |
+          echo "Stopping Mailpit..."
+
+          docker stop mailpit 2>/dev/null || true
+          docker rm mailpit 2>/dev/null || true
+
+          echo "Mailpit stopped."
