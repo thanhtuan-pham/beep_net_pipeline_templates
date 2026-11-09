@@ -58,6 +58,7 @@ jobs:
      - name: Find latest tag
        if: steps.check_tags.outputs.has_tags == 'true'
        id: find_latest_tag
+       continue-on-error: true
        uses: oprypin/find-latest-tag@v1
        with:
           repository: ${{ github.repository }}
