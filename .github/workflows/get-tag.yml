@@ -70,7 +70,11 @@ jobs:
        id: latest_tag
        run: |
           if [[ "${{ steps.check_tags.outputs.has_tags }}" == "true" ]]; then
-              echo "latest_tag=${{ steps.find_latest_tag.outputs.tag }}" >> $GITHUB_OUTPUT
+              TAG="${{ steps.find_latest_tag.outputs.tag }}"
+              if [ -z "$TAG" ]; then
+                  TAG="${{ inputs.prefix-tag }}1.0.0"
+              fi
+              echo "latest_tag=$TAG" >> "$GITHUB_OUTPUT"
             else
               echo "latest_tag=${{ inputs.prefix-tag }}1.0.0" >> $GITHUB_OUTPUT
             fi
