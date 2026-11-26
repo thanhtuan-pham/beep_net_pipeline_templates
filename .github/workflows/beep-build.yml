@@ -55,10 +55,6 @@ on:
       BEEP_NUGET_KEY:
         required: true
 
-        AZURE_CREDENTIALS:
-        required: false
-
-
 permissions:
   contents: write
   issues: read
@@ -201,32 +197,3 @@ jobs:
 
     secrets:
       NUGET_KEY: ${{ secrets.BEEP_NUGET_KEY }}
-
-
-  # ==========================================================
-  # DEPLOY
-  # ==========================================================
-
-  deploy-ci:
-    name: Deploy to CI
-    needs: ci-build-test
-    if: inputs.call-deploy
-
-    uses: thanhtuan-pham/beep_net_pipeline_templates/.github/workflows/beep-deploy.yml@main
-
-    with:
-      environment: CI
-      infrastructure: Azure
-      runs-on: ${{ inputs.runs-on }}
-
-  deploy-test:
-    name: Deploy to Test
-    needs: deploy-ci
-    if: inputs.call-deploy
-
-    uses: thanhtuan-pham/beep_net_pipeline_templates/.github/workflows/beep-deploy.yml@main
-
-    with:
-      environment: TEST
-      infrastructure: Azure
-      runs-on: ${{ inputs.runs-on }}
