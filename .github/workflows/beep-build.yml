@@ -21,6 +21,12 @@ on:
         type: string
         default: ""
 
+      publish-nuget-path:
+        description: "Solution or project path"
+        required: false
+        type: string
+        default: ""
+        
       runs-on:
         description: "Runner for deployment jobs"
         required: false
@@ -50,7 +56,7 @@ on:
         required: true
 
       BEEP_SNYK_TOKEN:
-        required: true
+        required: false
 
       BEEP_GLOBAL_USER:
         required: false
@@ -232,58 +238,6 @@ jobs:
         with:
           files: ${{ inputs.results-path }}
 
-
-      # ========================================================
-      # SNYK
-      # ========================================================
-
-      - name: Install Snyk
-        run: npm install -g snyk@latest
-
-
-      - name: Snyk Code Scan
-        if: always()
-        env:
-          SNYK_TOKEN: ${{ secrets.BEEP_SNYK_TOKEN }}
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          if find . \
-            \( \
-              -name "*.js" \
-              -o -name "*.ts" \
-              -o -name "*.py" \
-            \) \
-            -print -quit | grep -q .; then
-
-            echo "Running Snyk Code scan."
-
-            snyk code test
-
-          else
-
-            echo "No supported source files found."
-            echo "Skipping Snyk Code scan."
-
-          fi
-
-        continue-on-error: true
-
-
-      - name: Snyk Monitor
-        if: always()
-        env:
-          SNYK_TOKEN: ${{ secrets.BEEP_SNYK_TOKEN }}
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          snyk monitor --all-projects
-
-        continue-on-error: true
-
-
       # ==========================================================
       # PUBLISH NUGET
   #
@@ -304,7 +258,7 @@ jobs:
 
     with:
       version: ${{ inputs.version }}
-      solution-path: ${{ inputs.solution-path }}
+      solution-path: ${{ inputs.publish-nuget-path }}
       prefix-tag: ${{ inputs.prefix-tag }}
       prerelease: ${{ !startsWith(github.ref, format('refs/tags/{0}', inputs.prefix-tag)) }}
 
