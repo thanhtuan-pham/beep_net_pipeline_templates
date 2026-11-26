@@ -54,7 +54,25 @@ on:
 
       BEEP_NUGET_KEY:
         required: true
+        
+      BEEP_GLOBAL_USER:
+        required: false
 
+      BEEP_GLOBAL_PASSWORD:
+        required: false
+
+      BEEP_GLOBAL_TEST_USER:
+        required: false
+
+      BEEP_GLOBAL_TEST_PASSWORD:
+        required: false
+
+      BEEP_LOCAL_TEST_USER:
+        required: false
+
+      BEEP_LOCAL_TEST_PASSWORD:
+        required: false
+        
 permissions:
   contents: write
   issues: read
@@ -160,7 +178,44 @@ jobs:
               --results-directory "./TestResults"
 
           done <<< "$PROJECTS"
+     # ========================================================
+      # INTEGRATION TESTS
+      # ========================================================
 
+      - name: Run Integration Tests
+        env:
+          BEEP_GLOBAL_USER: ${{ secrets.BEEP_GLOBAL_USER }}
+          BEEP_GLOBAL_PASSWORD: ${{ secrets.BEEP_GLOBAL_PASSWORD }}
+          BEEP_GLOBAL_TEST_USER: ${{ secrets.BEEP_GLOBAL_TEST_USER }}
+          BEEP_GLOBAL_TEST_PASSWORD: ${{ secrets.BEEP_GLOBAL_TEST_PASSWORD }}
+          BEEP_LOCAL_TEST_USER: ${{ secrets.BEEP_LOCAL_TEST_USER }}
+          BEEP_LOCAL_TEST_PASSWORD: ${{ secrets.BEEP_LOCAL_TEST_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mkdir -p TestResults
+
+          PROJECTS=$(find . -name "*.Tests.Integration.csproj" -print)
+
+          if [ -z "$PROJECTS" ]; then
+            echo "No integration test projects found."
+            exit 0
+          fi
+
+          while IFS= read -r PROJECT; do
+
+            echo "Testing: $PROJECT"
+
+            PROJECT_NAME=$(basename "$PROJECT" .csproj)
+
+            dotnet test "$PROJECT" \
+              --no-build \
+              --verbosity normal \
+              --logger "trx;LogFileName=${PROJECT_NAME}.trx" \
+              --results-directory "./TestResults"
+
+          done <<< "$PROJECTS"
       # ========================================================
       # TEST RESULTS
       # ========================================================
