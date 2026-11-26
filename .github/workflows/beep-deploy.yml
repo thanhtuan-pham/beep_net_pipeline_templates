@@ -1,0 +1,75 @@
+name: Deploy
+
+on:
+  workflow_call:
+   inputs:
+    environment:
+        description: "Deployment environment (CI, TEST, PROD)"
+        required: true
+        type: string
+        default: "CI"
+
+    infrastructure:
+        description: "Infrastructure type (e.g., Azure, AWS, GCP)"
+        required: false
+        type: string
+        default: "Azure"
+
+    runs-on:
+        description: "GitHub Actions runner"
+        required: false
+        type: string
+        default: "ubuntu-latest"
+
+permissions:
+  contents: read
+
+jobs:
+
+  deploy:
+    name: Deploy to ${{ inputs.environment }}
+    runs-on: ${{ inputs.runs-on }}
+    environment: ${{ inputs.environment }}
+
+    steps:
+
+      # ------------------------------------------------------
+      # Checkout
+      # ------------------------------------------------------
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+
+      # ------------------------------------------------------
+      # Deployment
+      # ------------------------------------------------------
+
+      - name: Map environment
+        id: map-environment
+        shell: bash
+        run: |
+          case "${{ inputs.environment }}" in
+            CI|TEST)
+              echo "MAPPED_ENVIRONMENT=development" >> $GITHUB_OUTPUT
+              ;;
+            PROD)
+              echo "MAPPED_ENVIRONMENT=production" >> $GITHUB_OUTPUT
+              ;;
+            *)
+              echo "MAPPED_ENVIRONMENT=development" >> $GITHUB_OUTPUT
+              ;;
+          esac
+          
+  call-azure:
+      name: Call Azure deployment workflow
+      needs: deploy
+      if: inputs.infrastructure == 'Azure'
+      uses: TheBeepTeam/beep_net_pipeline_templates/.github/workflows/beep-azure.yml@main
+      with:
+        environment: ${{ needs.deploy.outputs.mapped_environment }}
+        location: southeastasia
+        web_app_name: beep-sa-azure-${{ inputs.environment }}-app
+        web_app_runtime: DOTNETCORE:8.0
+        sql_db_name: beep-sa-azure-${{ inputs.environment }}-db
+        is_linux: 'true'

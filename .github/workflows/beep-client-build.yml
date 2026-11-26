@@ -1,0 +1,41 @@
+name: Build Beep Pipeline Client
+
+on:
+  push:
+    branches: 
+    - '*'
+    - '!release'
+    paths:
+      - 'beep_net_pipeline_templates_client/**'
+    tags:
+      - 'v*'
+            
+permissions:
+  contents: write
+  issues: read
+  checks: write
+  pull-requests: write
+  security-events: write
+  
+jobs:
+  get-tag:
+    uses: TheBeepTeam/beep_net_pipeline_templates/.github/workflows/beep-get-tag.yml@main
+    
+  call-reusable-workflow:
+    needs: get-tag
+    uses: TheBeepTeam/beep_net_pipeline_templates/.github/workflows/beep-build.yml@main
+    with:
+      results-path: 'TestResults/**/*.trx'
+      solution-path: beep_net_pipeline_templates_client/beep_net_pipeline_templates_client.sln
+      version: ${{ needs.get-tag.outputs.new_version }}
+      call-publish-nuget: true
+      call-deploy: false
+    secrets:
+      BEEP_NUGET_KEY: ${{ secrets.BEEP_NUGET_API_KEY }}
+      BEEP_SNYK_TOKEN: ${{ secrets.BEEP_SNYK_TOKEN }}
+      BEEP_GLOBAL_USER: ${{ secrets.BEEP_GLOBAL_USER }}
+      BEEP_GLOBAL_PASSWORD: ${{ secrets.BEEP_GLOBAL_PASSWORD }}
+      BEEP_GLOBAL_TEST_USER: ${{ secrets.BEEP_GLOBAL_TEST_USER }}
+      BEEP_GLOBAL_TEST_PASSWORD: ${{ secrets.BEEP_GLOBAL_TEST_PASSWORD }}
+      BEEP_LOCAL_TEST_USER: ${{ secrets.BEEP_LOCAL_TEST_USER }}
+      BEEP_LOCAL_TEST_PASSWORD: ${{ secrets.BEEP_LOCAL_TEST_PASSWORD }}

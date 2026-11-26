@@ -1,0 +1,194 @@
+name: Publish NuGet Package
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: "Package and release version"
+        required: true
+        type: string
+
+      solution-path:
+        description: "Solution or project path"
+        required: false
+        type: string
+        default: ""
+
+      prerelease:
+        description: "Create a GitHub pre-release"
+        required: false
+        type: boolean
+        default: false
+        
+      prefix-tag:
+        required: false   
+        type: string
+        default: "v"
+        
+    secrets:
+      NUGET_KEY:
+        description: "NuGet API key"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+
+  publish:
+    name: Publish NuGet
+    runs-on: ubuntu-latest
+    environment: PROD
+
+    steps:
+
+      # ------------------------------------------------------
+      # Checkout
+      # ------------------------------------------------------
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+
+      # ------------------------------------------------------
+      # Setup .NET
+      # ------------------------------------------------------
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+
+      # ------------------------------------------------------
+      # Check existing release
+      # ------------------------------------------------------
+
+      - name: Check Release Exists
+        id: check_release
+        uses: insightsengineering/release-existence-action@v1
+        with:
+          release-tag: ${{ inputs.prefix-tag }}${{ inputs.version }}
+
+
+      # ------------------------------------------------------
+      # Create GitHub Release
+      # ------------------------------------------------------
+
+      - name: Create Pre-release
+        if: |
+          inputs.prerelease &&
+          steps.check_release.outputs.release-exists == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          gh release create \
+            "${{ inputs.prefix-tag }}${{ inputs.version }}" \
+            --title "Pre Release ${{ inputs.prefix-tag }}${{ inputs.version }}" \
+            --prerelease \
+            --generate-notes
+
+
+      - name: Create Release
+        if: |
+          !inputs.prerelease &&
+          steps.check_release.outputs.release-exists == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          gh release create \
+            "${{ inputs.prefix-tag }}${{ inputs.version }}" \
+            --title "Release ${{ inputs.prefix-tag }}${{ inputs.version }}" \
+            --generate-notes
+
+
+      # ------------------------------------------------------
+      # Restore
+      # ------------------------------------------------------
+
+      - name: Restore dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ -n "${{ inputs.solution-path }}" ]; then
+            dotnet restore "${{ inputs.solution-path }}"
+          else
+            dotnet restore
+          fi
+
+
+      # ------------------------------------------------------
+      # Build
+      # ------------------------------------------------------
+
+      - name: Build
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ -n "${{ inputs.solution-path }}" ]; then
+            dotnet build \
+              "${{ inputs.solution-path }}" \
+              --configuration Release \
+              --no-restore
+          else
+            dotnet build \
+              --configuration Release \
+              --no-restore
+          fi
+
+
+      # ------------------------------------------------------
+      # Pack
+      # ------------------------------------------------------
+
+      - name: Pack NuGet package
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mkdir -p nupkgs
+
+          if [ -n "${{ inputs.solution-path }}" ]; then
+
+            dotnet pack \
+              "${{ inputs.solution-path }}" \
+              --configuration Release \
+              --no-build \
+              --output nupkgs/ \
+              /p:Version=${{ inputs.version }}
+
+          else
+
+            dotnet pack \
+              --configuration Release \
+              --no-build \
+              --output nupkgs/ \
+              /p:Version=${{ inputs.version }}
+
+          fi
+
+
+      # ------------------------------------------------------
+      # Publish to NuGet
+      # ------------------------------------------------------
+
+      - name: Publish NuGet package
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          dotnet nuget push \
+            "nupkgs/*.nupkg" \
+            --api-key "${{ secrets.NUGET_KEY }}" \
+            --source "https://api.nuget.org/v3/index.json" \
+            --skip-duplicate

@@ -1,0 +1,148 @@
+name: Get tag
+
+on:
+  workflow_call:      
+    inputs:
+      prefix-tag:
+        required: false   
+        type: string
+        default: "v"
+        
+    outputs:
+      new_version:
+        value: ${{ jobs.get-tag.outputs.new_version }}   
+      environment:
+        value: ${{ jobs.get-tag.outputs.environment }}
+jobs:  
+  get-tag:
+    name: Get tag
+    runs-on: ubuntu-latest
+    environment: DEV
+    outputs:
+      new_version: ${{ steps.get-tag.outputs.new_version }}
+      environment: ${{ steps.tag-release.outputs.environment || ''}}
+      
+    steps:
+     - name: Checkout code
+       uses: actions/checkout@v5
+       with:
+            fetch-depth: 0 
+          
+     - name: Setup .NET
+       uses: actions/setup-dotnet@v5
+       with:
+         dotnet-version: 8.0.x
+
+     - name: Get tag
+       if: startsWith(github.ref, format('refs/tags/{0}', inputs.prefix-tag))
+       id: tag-release
+       run: |
+          TAG_REF="${{ github.ref }}"
+          VERSION=$(echo "$TAG_REF" | sed -E 's/^refs\/tags\/([^/]+\/)?v?([0-9.]+).*$/\2/')
+          ENVIRONMENT=$(echo "$TAG_REF" | sed -E 's/^refs\/tags\/v[0-9.]+-(.*)$/\1/')
+          
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "environment=$ENVIRONMENT" >> "$GITHUB_OUTPUT"
+         
+     - name: Check for tags using git
+       if: ${{ !startsWith(github.ref, format('refs/tags/{0}', inputs.prefix-tag)) }}
+       id: check_tags
+       run: |
+          TAGS=$(git tag --list)
+          if [ -z "$TAGS" ]; then
+            echo "has_tags=false" >> $GITHUB_OUTPUT
+          else
+            echo "has_tags=true" >> $GITHUB_OUTPUT
+          fi   
+          
+     - name: Find latest tag
+       if: steps.check_tags.outputs.has_tags == 'true'
+       id: find_latest_tag
+       continue-on-error: true
+       uses: oprypin/find-latest-tag@v1
+       with:
+          repository: ${{ github.repository }}
+          releases-only: false
+          prefix: "${{ inputs.prefix-tag }}"
+          
+     - name: Get latest tag
+       if: ${{ !startsWith(github.ref, format('refs/tags/{0}', inputs.prefix-tag)) }}
+       id: latest_tag
+       run: |
+          if [[ "${{ steps.check_tags.outputs.has_tags }}" == "true" ]]; then
+              TAG="${{ steps.find_latest_tag.outputs.tag }}"
+              if [ -z "$TAG" ]; then
+                  TAG="${{ inputs.prefix-tag }}1.0.0"
+              fi
+              echo "latest_tag=$TAG" >> "$GITHUB_OUTPUT"
+            else
+              echo "latest_tag=${{ inputs.prefix-tag }}1.0.0" >> $GITHUB_OUTPUT
+            fi
+            
+     - name: Get latest release tag
+       if: steps.check_tags.outputs.has_tags == 'true'
+       id: release
+       shell: bash
+       run: |
+          git fetch --tags --force
+
+          TAG=$(git tag --sort=-v:refname \
+            | grep -E '^v?[0-9]+\.[0-9]+\.[0-9]+$' \
+            | head -n 1 || true)
+
+          echo "Latest tag: $TAG"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+     - name: Select final tag
+       if: steps.check_tags.outputs.has_tags == 'true'
+       id: final_tag
+       run: |
+         LATEST_TAG="${{ steps.latest_tag.outputs.latest_tag }}"
+         RELEASE_TAG="${{ steps.release.outputs.tag }}"
+
+         if [[ -z "$RELEASE_TAG" || "$RELEASE_TAG" == "null" ]]; then
+           FINAL_TAG="$LATEST_TAG"
+
+         elif [[ "$LATEST_TAG" == *"$RELEASE_TAG"* ]]; then
+           FINAL_TAG="$RELEASE_TAG"
+
+         else
+           FINAL_TAG="$LATEST_TAG"
+         fi
+
+         echo "tag=$FINAL_TAG" >> $GITHUB_OUTPUT
+          
+     - name: Check tag pre release
+       id: check_tag_pre_release
+       if: contains(steps.final_tag.outputs.tag, 'build')
+       run: echo "check=true" >> $GITHUB_OUTPUT
+        
+     - name: Calculate new version
+       if: ${{ !startsWith(github.ref, format('refs/tags/{0}', inputs.prefix-tag)) }}
+       id: tag-pre-release
+       run: |
+            LAST_TAG=${{ steps.final_tag.outputs.tag }}
+            PREFIX_TAG="${{ inputs.prefix-tag }}"
+            VERSION_CORE="${LAST_TAG#"$PREFIX_TAG"}"
+
+            if [[ "${{ steps.check_tag_pre_release.outputs.check }}" == "true" ]]; then
+              NEW_VERSION_CORE=$(echo $VERSION_CORE | awk -F'.' -v OFS='.' '{$NF = $NF + 1;}1')
+              echo "new_version=$NEW_VERSION_CORE" >> $GITHUB_OUTPUT
+            else      
+              if [[ -z "$VERSION_CORE" ]]; then
+                NEW_VERSION_CORE="1.0.0"
+              else
+                NEW_VERSION_CORE=$(echo $VERSION_CORE | awk -F'.' -v OFS='.' '{$NF = $NF + 1;}1')
+              fi
+              
+              echo "new_version=$NEW_VERSION_CORE-build.1" >> $GITHUB_OUTPUT
+            fi
+            
+     - name: Get latest tag
+       id: get-tag
+       run: |
+         if [[ "${{ steps.tag-release.outputs.version }}" == "" ]]; then
+              echo "new_version=${{ steps.tag-pre-release.outputs.new_version }}" >> $GITHUB_OUTPUT
+            else
+              echo "new_version=${{ steps.tag-release.outputs.version }}" >> $GITHUB_OUTPUT
+          fi
