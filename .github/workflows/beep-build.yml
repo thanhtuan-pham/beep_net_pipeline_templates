@@ -196,7 +196,7 @@ jobs:
 
           mkdir -p TestResults
 
-          PROJECTS=$(find . -name "*.Tests.Integration.csproj" -print)
+          PROJECTS=$(find . -name "*.Tests.Integration*.csproj" -print)
 
           if [ -z "$PROJECTS" ]; then
             echo "No integration test projects found."
